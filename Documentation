@@ -1,0 +1,33 @@
+Command: myDota [--mode=MODE] [--ip=IPADDR] [--port=PORT]
+Options:
+--mode=MODE
+	MODE should be either SERVER or CLIENT. If this option is not used, then by default the game will open in Single-Player mode.
+--ip=IPADDR
+	This option is invalid if --mode is not specified. IPADDR should be ip address assigned to one of the network interface of server. Default IPPADDR is assigned as localhost.
+--port=PORT
+	This option is invalid if --mode is not specified. PORT should be in greater than 1024. Default PORT is assigned as 3500.	
+___________________________________________________________________________________________________________________________________________________
+Multiplayer mode:
+	SERVER mode:
+		In this mode, the player will specify the:
+		1) hero: It shold be name of file from ./heros folder. If a player wish to play for team A, then player should choose a file from ./heros folder with 'A' as as prefix.
+		2) items: It shold asked be name of file from ./items folder. The user will be iteratively asked for particulars, till item bag capacity is reached or no more items can be fitted. Note that different items occupy different space in item bag.
+		3) map: It shold be name of file from ./maps folder.
+		
+		After specifying above mentioned things, the server will wait for 120 seconds for other players to join the game. In that window of time, if one of the two teams does not have at least one player, the game quits. 
+		
+	
+	CLIENT mode:
+		In this mode, the player will specify the:
+		1) hero
+		2) items
+		The description of these is essentially same as above.
+___________________________________________________________________________________________________________________________________________________
+Bot mode:
+	This is the default mode if --mode is not specified. In this mode, the player will specify the:
+	1) hero
+	2) items
+	3) map		
+	The description of these is essentially same as SEVER mode.
+___________________________________________________________________________________________________________________________________________________
+

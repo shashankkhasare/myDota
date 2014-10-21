@@ -1,0 +1,18 @@
+Files m1 through m9 are the maps represented by 50x50 grid. These are generated using mapgen file. The arena is divided into two halves across a leading diagonal. The collectibles are distributed randomly and equally across both halves of the arena.
+
+Symbols in Grid:
+1)     T
+      T1T
+     T111T	: Temple of Team A
+      T1T
+       T
+
+2)     T
+      T1T
+     T111T	: Temple of Team B
+      T1T
+       T
+
+3) J: Tree
+4) [1..9]: Collectilble items
+5) . : Free Space             
