@@ -1,7 +1,7 @@
 CC = gcc
 EXEC_NAME = myDota
 BASIC_C = test.c 
-OPENGL_FLAGS = -lglut -lGLU -lGL -lm
+OPENGL_FLAGS = -lglut -lGLU -lGL -lm -lSOIL -lGLEW
 
 all		: $(EXEC_NAME)
 
