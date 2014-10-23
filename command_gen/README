@@ -1,0 +1,1 @@
+Sends generated commands to server. Server enqueues the commands into input_buffer of the corresponding player.

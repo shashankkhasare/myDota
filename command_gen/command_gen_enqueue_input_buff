@@ -1,0 +1,5 @@
+goto X Y
+attackto X Y
+useitem	X
+setattack X
+additem X

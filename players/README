@@ -1,0 +1,1 @@
+Each player is associated with hero, input_buffer, drive(). The input_buffer is filled by the command_gen. Command_gen essentially diifentiates between human and AI.
