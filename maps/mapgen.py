@@ -56,10 +56,10 @@ def GenCoordList(capacity, Map):
 	while s1 < capacity or s2 < capacity :
 		x = randrange(len(Map[0])-1)
 		y = randrange(len(Map)-1)
-		if x > y and s1 < capacity and Map[y][x] == '.':
+		if x > y and s1 < capacity and Map[y][x] == '.' and not U.__contains__([x,y]):
 			U.append([x,y])
 			s1 += 1
-		elif x < y and s2 < capacity  and Map[y][x] == '.':
+		elif x < y and s2 < capacity  and Map[y][x] == '.' and not L.__contains__([x,y]):
 			L.append([x,y])
 			s2 += 1	
 	return L, U
@@ -81,17 +81,18 @@ DrawCircle(-1, 0, rows/8, UPPERQUAD, Map, 'A')
 Fill(Map, rows-1, 0, 'A')
 DrawCircle(0, 1, rows/8, LOWERQUAD, Map, 'B')
 Fill(Map, 0, cols-1, 'B')
-DrawCircle(cols/2-cols/6, rows/2+rows/6, rows/12, FULL, Map, 'T')
-Fill(Map, rows/2-rows/6, cols/2-cols/6, '1')
-DrawCircle(cols/2+cols/6, rows/2-rows/6, rows/12, FULL, Map, 'T')
-Fill(Map, rows/2+rows/6, cols/2+cols/6, '2')
-
+DrawCircle(cols/2-cols/6, rows/2+rows/6, rows/12, FULL, Map, 'a')
+Fill(Map, rows/2-rows/6, cols/2-cols/6, 'a')
+print "A_TEAM: ", rows/2-rows/6," ", cols/2-cols/6
+DrawCircle(cols/2+cols/6, rows/2-rows/6, rows/12, FULL, Map, 'b')
+Fill(Map, rows/2+rows/6, cols/2+cols/6, 'b')
+print "B_TEAM: ", rows/2+rows/6," ", cols/2+cols/6
 
 # Draw Jungle
 L, U = GenCoordList(rows*cols/25, Map)
 for j in [L,U]:
 	for i in j:
-		Map[i[0]][i[1]] = 'J'
+		Map[i[1]][i[0]] = 'J'
 
 
 # Draw Collectible Items
@@ -100,6 +101,6 @@ items = [str(i) for i in items]
 L, U = GenCoordList(rows*cols/100, Map)
 for j in [L,U]:
 	for i in range(len(j)):
-		Map[j[i][0]][j[i][1]] = items[i]
+		Map[j[i][1]][j[i][0]] = items[i]
 
 Print(Map)
