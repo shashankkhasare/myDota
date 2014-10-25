@@ -44,6 +44,7 @@ map * init_map(char *filename);
 char * map_temple_location(int index, map *m);
 
 /**
+  * [dest_x, dest_y] is defined by input device i.e. mouse or keyboard.
   * If [dest_x, dest_y] is 'J', 'A', 'B' then simply sets last_path_index to -1 and return.
   * If [dest_x, dest_y] is unreachable point from [curr_x, curr_y], then simply sets last_path_index to -1 and return.
   * If [dest_x, dest_y] is 'a' or 'b', then 1st feasible point, of all points sorted by euclidean distance from (curr_x, curr_y),
