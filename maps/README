@@ -1,49 +1,52 @@
 Files m1 through m9 are the maps represented by 50x50 grid. These are generated using mapgen file. The arena is divided into two halves across a leading diagonal. The collectibles are distributed randomly and equally across both halves of the arena.
 
 Symbols in Grid:
-1)     T
-      T1T
-     T111T	: Temple of Team A
-      T1T
-       T
+1)     a
+      aaa
+     aaaaa	: Temple of Team A
+      aaa
+       a
 
-2)     T
-      T2T
-     T222T	: Temple of Team B
-      T2T
-       T
+2)     b
+      bbb
+     bbbbb	: Temple of Team B
+      bbb
+       b
 
 3) J: Tree
 4) [1..9]: Collectilble items
 5) . : Free Space
+6) A: Spawn area of Team A
+7) B: Spawn area of Team B
 
 (0,0) is located at top-left corner and (map.rows-1, map.columns-1) is located at right-bottom.
 
 SAMPLE_MAP_FILE:
-A_TEAM:  8   8
-B_TEAM:  16   16
-. J . . J . . . J . . . . . . . . . . . 3 B B B B 
-. . . . . . . . . J . . . J . J . . . . . B B B B 
-J . . . . J . . . . . . . . . . . . . . . . B B B 
-. . J . . . . . . . J J . . . . J . . . . . . B B 
-. J . . . . . . . . . . . . . J . . . . . . . J . 
-. . . 5 . . J . . 4 . . . . . . . J . . . . . . . 
-. . . . . . . . a a a . . . . 5 . . J J . J . . . 
-. . . J J . . a a a a a . . . . . . . . . . 4 . . 
-. . . . . . . a a a a a . . . . . . . . . . . . . 
-3 . J . . . . a a a a a . . . . . . . . . . . . . 
-. . . . . J 9 J a a a . . . J . . . . . . . . . . 
-. . . . . . . . . . . . . . . . J . J . . . . . . 
-. J . . . . . . . . . J . . J . J . J . . . 2 . . 
-. . . . . J . . . . . . . . . . . . . . . . . . . 
-. . J . . . . . . J . . . . . . b b b J . . . . . 
-. 2 . . . . . . . . . . . . . b b b b b . . . J . 
-. . . . . . . . . . . . . . J b b b b b . . . . . 
-. . . . . . . . . . . . . . J b b b b b . . . . . 
-. . . . . . J J . . . . . . . . b b b . . . . 9 . 
-. . . . . . . . . . . . . . . . . . . . . . . . . 
-. . . . . . . . . . J . . . . 4 . . J . . . . . . 
-A A . . . . . . . . . . . . . . . . . J . . . . . 
-A A A . . J . . . . . . J . . . . . J . . . . . . 
-A A A A . . . . . J . . J . . 4 . . . . . . . . . 
-A A A A . . . . . . . . . . . . . . . . . . . . .
+
+TEAM_A_SPAWN_BORDER:  (17, 0) (18, 2) (19, 2) (17, 1) 
+TEAM_B_SPAWN_BORDER:  (0, 17) (2, 19) (1, 17) (2, 18) 
+TEAM_A_TEMPLE_BORDER:  (6, 7) (7, 6) (7, 8) (8, 7) 
+TEAM_B_TEMPLE_BORDER:  (13, 14) (12, 13) (13, 12) (14, 13) 
+A_TEAM_TEMPLE_CENTER:  (7, 7)
+B_TEAM_TEMPLE_CENTER:  (13, 13)
+MAP:
+. . . . J . . . . . . . . . . . . B B B 
+. . J J 8 . . . . . J J . . . J . B B B 
+. . . . J . . . . . . . . . . . . . B B 
+. . . . . . . . . 3 . . . . . . . . . . 
+. . . . . J . . . . . . . J . . . J . . 
+. . J . . . . . . . . . . . . . . J . . 
+J . . 3 . . . a . . . . J . . . . 8 . . 
+. . . . 8 J a a a . J . . . . . . . . . 
+. . . . . . . a . . . . . . . . J . . . 
+. . . J . . . J J . . . . . . . . 3 . . 
+. . 8 . . J . . . J . . . . . . . . . . 
+J . . . . . . . . . . . . . . . . . J . 
+. . . . J . . . . . J . . b . . . . . . 
+. . . . . . . . . . . J b b b . . J . . 
+. . . . . . . . . . . . . b . . . . . . 
+. . . . . J . . . . . . . . . . . . . . 
+. . . . . . . . . . . . J . . 3 . . . . 
+A A . . . . . . . . . . . . . . . . . . 
+A A A . J . J . . . . . . . . . . . . . 
+A A A . . . . . . . . . . . . . . . . . 
