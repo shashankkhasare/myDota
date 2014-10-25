@@ -11,12 +11,16 @@
 #define MOVING			7
 #define DEAD			8
 
+#define MELEE_WEAPON		1
+#define MAGIC			2
+
 #define	UP			1
 #define	DOWN			2
 #define	LEFT			3
 #define	RIGHT			4
 
 #include "../items/item.h"
+#include "../maps/map.h"
 
 typedef struct item_bag{
 	int bag_capacity;
@@ -31,15 +35,15 @@ typedef struct hero{
 	int max_health;
 	int movement_speed;
 	int attack_speed;
+	int attack_mode;
 	int damage;
 	item_bag bag;
 	int curr_x_pos, curr_y_pos;
 	int dest_x_pos, dest_y_pos;
 	int state;
 	int orientation;
-	char path[2500][2];
+	path_t path;
 	int curr_path_index;
-	int last_path_index;	
 }hero;
 
 /**
