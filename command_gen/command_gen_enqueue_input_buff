@@ -1,5 +1,6 @@
 goto X Y
 attackto X Y
+attackhero h_id
 useitem	X
-setattack X
+setattackmode X
 additem X

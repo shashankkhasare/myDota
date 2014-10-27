@@ -30,6 +30,8 @@ typedef struct item_bag{
 
 typedef struct hero{
 	int h_id;
+	char symbol_on_map;
+	int team_tag;
 	int mpower_id;
 	int health;
 	int max_health;
@@ -38,12 +40,12 @@ typedef struct hero{
 	int attack_mode;
 	int damage;
 	item_bag bag;
-	int curr_x_pos, curr_y_pos;
-	int dest_x_pos, dest_y_pos;
+	point_t curr_pos, dest_pos;
 	int state;
 	int orientation;
 	path_t path;
-	int curr_path_index;
+	int curr_path_index;	
+	//TODO: Maybe we can add input_buffer, function pointer drive here only. 
 }hero;
 
 /**
@@ -86,6 +88,10 @@ int update_movement_speed(hero *h, int update);
 **/  
 int update_attack_speed(hero *h, int update);
 
+/**
+  * Returns the current position of h.
+**/  
+point_t get_curr_pos(hero *h);
 
 /**
   * Renders the hero on screen.
