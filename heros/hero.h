@@ -45,7 +45,7 @@ typedef struct hero{
 	int orientation;
 	path_t path;
 	int curr_path_index;	
-	//TODO: Maybe we can add input_buffer, function pointer drive here only. 
+	//TODO: Maybe we can add input_buffer, function pointer drive here only. After this, there won't be any player folder.
 }hero;
 
 /**

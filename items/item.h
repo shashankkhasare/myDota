@@ -4,7 +4,8 @@ typedef struct item{
 	int movement_speed;
 	int attack_speed;
 	int health;
-	int damage;
+	int damage_melee;
+	int damage_magic;
 	int temp_heal;
 	int required_space;
 	int quantity;
