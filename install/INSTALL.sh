@@ -4,3 +4,4 @@ sudo apt-get install libglew-dev
 sudo apt-get install libglfw-dev
 
 sudo apt-get install libsdl-dev
+sudo apt-get install vim 
