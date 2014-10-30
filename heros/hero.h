@@ -32,7 +32,7 @@ typedef struct hero{
 	int h_id;
 	char symbol_on_map;
 	int team_tag;
-	int mpower_id;
+	int mpower_id;	//TODO: This will be replaced by magic_t variable in future.
 	int health;
 	int max_health;
 	int movement_speed;
