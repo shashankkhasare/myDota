@@ -1,1 +1,1 @@
-Each player is associated with hero, input_buffer, drive(). The input_buffer is filled by the command_gen. Command_gen essentially diifentiates between human and AI.
+Each player (i.e. AI or Human. Call it bot.) is given botname.cpp with empty Drive() function. Human.cpp will be added for reference soon. Drive() function is supposed to generate commands given in command_gen_enqueue_input_buff. So one can built intelligent AI code by writing clever code in Drive().
