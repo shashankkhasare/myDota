@@ -20,9 +20,13 @@ int main()
 	menu.setLocation(0, 0);
 	menu.setDim(916, 663);
 
+	// instantiate logo 
+	Widget logo("images/gamelogo.bmp", "images/gamelogo_hover.bmp", 170 , 100, 570 , 84 ) ; 
+	logo.deleteWhite(screen);
 
 	//adding the menu background 
-	SDL_BlitSurface(menu.getSurface(), NULL, screen, menu.getRectAddr());
+	//and logo 
+
 
 	// instantiate single player 
 	Widget singlePlayerButton("images/single_player.bmp", "images/single_player_hover.bmp", 350, 270 , 195, 51);
@@ -72,14 +76,17 @@ int main()
 				case SDL_MOUSEMOTION:
 					singlePlayerButton.handleHover(e);
 					multiPlayerButton.handleHover(e);
+					logo.handleHover(e);
 					exitButton.handleHover(e);
 					break;
 
 			}
 		}
+		SDL_BlitSurface(menu.getSurface(), NULL, screen, menu.getRectAddr());
 		SDL_BlitSurface(singlePlayerButton.getSurface(), NULL, screen, singlePlayerButton.getRectAddr());
 		SDL_BlitSurface(multiPlayerButton.getSurface(), NULL, screen, multiPlayerButton.getRectAddr());
 		SDL_BlitSurface(exitButton.getSurface(), NULL, screen, exitButton.getRectAddr());
+		SDL_BlitSurface(logo.getSurface(), NULL, screen, logo.getRectAddr());
 		SDL_Flip(screen);
 
 		if(1000/30 > SDL_GetTicks()-start)
