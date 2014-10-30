@@ -1,7 +1,7 @@
-CC = gcc
-EXEC_NAME = myDota
-BASIC_C = test.c 
-OPENGL_FLAGS = -lglut -lGLU -lGL -lm -lSOIL -lGLEW
+CC = g++
+EXEC_NAME = mydota
+BASIC_C = main.cpp
+OPENGL_FLAGS = -lSDL
 
 all		: $(EXEC_NAME)
 
