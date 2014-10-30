@@ -1,0 +1,1 @@
+Game state consist of MAP variable, player variables, temple variable. The server will recieve commands (described in command_gen/command_gen_enqueue_input_buff) from clients. In addition it will provide curr_pos of hero given its h_id.
