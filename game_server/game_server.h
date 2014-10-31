@@ -1,17 +1,11 @@
-/**
-  * Returns the current position of hero with h_id.
-**/  
+/*
 point_t get_curr_pos(int h_id);
 
-/**
-  * Listens for commands;
-**/  
+
 void recv_cmd();
+*/
 
-
-
-
-class Server {
+#include "../maps/map.h"
 
 
 	// map 
@@ -23,6 +17,47 @@ class Server {
 	// and accordingly updating the game data structures, for eg the map, the item status and so on. 
 	
 
+class Server {
+
+	// members 
+	Map map; 
+	int port; 
+
+	// constructor
+	Server(char *map_file, int port);
+
+	/* Start server, 
+	 * this will bind a socket to the said port and start listening to the commands
+	 *
+	 * */
+	bool StartServer();
+
+	/* Start game, 
+	 * will check if the clients have joined in and ready 
+	 * Will start the actual play of the game 
+	 * */
+	bool StartServer(){
+
+
+	}
+
+
 
 
 }
+
+
+Server::Server(char *map_file, int port){
+	// Instantiate map
+	Map m(map_file);
+	Server::map = m;
+
+	Server::port = port; 
+}
+
+
+bool Server:StartServer(){
+
+
+}
+
