@@ -9,14 +9,6 @@
 #define TEAM_A			0
 #define TEAM_B			1
 
-typedef struct map_t{
-	int rows;
-	int cols;
-	char **terrain;
-	char **adj_mat;
-	temple temple_a, temple_b;
-	char spawn_locations[2][2];
-}map;
 
 typedef struct path_t{
 	char path[2500][2];
@@ -33,15 +25,30 @@ typedef struct points_list{
 }points_list;
 
 
+class Map{
+
+	int rows;
+	int cols;
+	char **terrain;
+	//char **adj_mat;
+	temple temple_a, temple_b;
+	char spawn_locations[2][2];
+
+
+	Map(char * filename );
+
+}
+
+
+
 /**
   * Creates map by reading filename from map folder. If filename does not exist, game exits.
 **/  
-map * init_map(char *filename);
+Map::Map(char *filename){
 
-/**
-  * Returns m->temple_location[index].
-**/  
-char * map_temple_location(int index, map *m);
+
+}
+
 
 /**
   * [dest_x, dest_y] is defined by input device i.e. mouse or keyboard.
@@ -53,16 +60,35 @@ char * map_temple_location(int index, map *m);
   * Writes the path(i.e sequence of [x,y] points) between [curr_x, curr_y] &
   * [dest_x, dest_y] into path_t.path and updates path_t.last_path_index. 
 **/  
-path_t construct_path(map *m, int curr_x, int curr_y, int dest_x, int dest_y);
+path_t Map::get_shortest_path(int src_x, int src_y, int dest_x, int dest_y){
+
+}
+
+ path_t Map::get_shortest_path(point_t src, point_t dest){
+	return get_shortest_path(src.x, src.y , dest.x, dest.y);
+}
 
 /**
   * Returns euclidean distance between (x1, y1) and (x2, y2).
 **/  
-float euclidean_dist(int x1, int y1, int x2, int y2);
+float Map::euclidean_dist(int x1, int y1, int x2, int y2){
 
+
+}
+
+float Map::euclidean_dist(point_t src, point_t dest){
+	return euclidean_dist(src.x, src.y , dest.x, dest.y);
+}
 /**
   * Returns 1 if straight line (constucted using naive_line_drawaing_algo() Source: Wikipedia) 
   * between (x1, y1) and (x2, y2) has only '.'s. Else return 0;
 **/  
-int is_line_of_sight_clear(int x1, int y1, int x2, int y2);
+bool Map::is_line_of_sight_clear(int x1, int y1, int x2, int y2){
+
+}
+
+
+bool Map::is_line_of_sight_clear(point_t src, point_t dest){
+	return is_line_of_sight_clear(src.x, src.y , dest.x, dest.y);
+}
 #endif
