@@ -18,35 +18,41 @@ Symbols in Grid:
 5) . : Free Space
 6) A: Spawn area of Team A
 7) B: Spawn area of Team B
+8) W: War border
+9) w: War area
+10) E: War enterance
 
 (0,0) is located at top-left corner and (map.rows-1, map.columns-1) is located at right-bottom.
 
 SAMPLE_MAP_FILE:
 
-TEAM_A_SPAWN_BORDER:  (17, 0) (18, 2) (19, 2) (17, 1) 
-TEAM_B_SPAWN_BORDER:  (0, 17) (2, 19) (1, 17) (2, 18) 
-TEAM_A_TEMPLE_BORDER:  (6, 7) (7, 6) (7, 8) (8, 7) 
-TEAM_B_TEMPLE_BORDER:  (13, 14) (12, 13) (13, 12) (14, 13) 
-A_TEAM_TEMPLE_CENTER:  (7, 7)
-B_TEAM_TEMPLE_CENTER:  (13, 13)
+ROWS:  20
+COLS:  20
+WAR_BORBER_OFFSET:  3
+TEAM_A_SPAWN_BORDER:  4 17 0 18 2 19 2 17 1 
+TEAM_B_SPAWN_BORDER:  4 0 17 2 19 1 17 2 18 
+TEAM_A_TEMPLE_BORDER:  4 6 7 7 6 7 8 8 7 
+TEAM_B_TEMPLE_BORDER:  4 13 14 12 13 13 12 14 13 
+A_TEAM_TEMPLE_CENTER:  7 7
+B_TEAM_TEMPLE_CENTER:  13 13
 MAP:
-. . . . J . . . . . . . . . . . . B B B 
-. . J J 8 . . . . . J J . . . J . B B B 
-. . . . J . . . . . . . . . . . . . B B 
-. . . . . . . . . 3 . . . . . . . . . . 
-. . . . . J . . . . . . . J . . . J . . 
-. . J . . . . . . . . . . . . . . J . . 
-J . . 3 . . . a . . . . J . . . . 8 . . 
-. . . . 8 J a a a . J . . . . . . . . . 
-. . . . . . . a . . . . . . . . J . . . 
-. . . J . . . J J . . . . . . . . 3 . . 
-. . 8 . . J . . . J . . . . . . . . . . 
-J . . . . . . . . . . . . . . . . . J . 
-. . . . J . . . . . J . . b . . . . . . 
-. . . . . . . . . . . J b b b . . J . . 
-. . . . . . . . . . . . . b . . . . . . 
-. . . . . J . . . . . . . . . . . . . . 
-. . . . . . . . . . . . J . . 3 . . . . 
-A A . . . . . . . . . . . . . . . . . . 
-A A A . J . J . . . . . . . . . . . . . 
-A A A . . . . . . . . . . . . . . . . . 
+w w w W . . . . . . . . . . . . . B B B 
+w w w w W . . . J . . . . J . . . B B B 
+w J w w J E . . . . . . . . . . . . B B 
+W J w w w w W . . . . 9 . . . . . . . . 
+. W w w w w w W . . . . . . . . . . . . 
+. . E w w w w w W . J J . . . . 4 . . . 
+. . . W w w w a w W J . . . . . . . . . 
+. J . . W w a a a w E . . . . . . . . . 
+. . . . . W w a w w w W . J . . . 6 . . 
+. . . . . . W w w w w w W . . . . . . . 
+J . . . . . . E w J w w w W . . . . . . 
+. . . . . . . . W w w w w J W J . . . . 
+. . . . . . . . . W w w w b w E . . . . 
+. . . . . . . 9 . . W w b b b w W . . . 
+. . . . J . . . . . . W J b w J w W . . 
+. . 6 . . . . . . . . . E w J w w w W . 
+. 8 . . J . . . . . . . J W w w w w w W 
+A A . . . . . . . . . . . . W 4 w w 8 w 
+A A A . . . . . . . . . . . . W w w w w 
+A A A . . . . . . . . . . . . . W w w w 
