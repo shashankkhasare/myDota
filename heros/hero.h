@@ -1,4 +1,5 @@
-#ifdef HERO_H
+#ifndef HERO_H
+#define HERO_H
 
 #define NUM_OF_ITEMS		9
 
@@ -28,7 +29,7 @@ typedef struct item_bag{
 	item items[NUM_OF_ITEMS];
 }item_bag;
 
-typedef struct hero{
+class  Hero{
 	int h_id;
 	char symbol_on_map;
 	int team_tag;
@@ -46,55 +47,59 @@ typedef struct hero{
 	path_t path;
 	int curr_path_index;	
 	//TODO: Maybe we can add input_buffer, function pointer drive here only. After this, there won't be any player folder.
-}hero;
-
-/**
-  * Creates hero by reading filename from heros folder. If filename does not exist, game exits.
-**/  
-hero * init_hero(char *filename);
-
-/**
-  * Adds new_item to item_bag of h. Does not add item_new if it exceeds item_bag.bag_capacity.
-**/  
-void add_to_item_bag(item *new_item, hero *h);
-
-/**
-  * Updates h->curr_x_pos, h->curr_y_pos to x,y respectively. Reads the global State.MAP (TODO: Define state).
-  * Retains old values if, new (x,y) tuple is occupied by some non-collectible (i.e. other hero or tree) in MAP, or (x,y) lies outside of MAP. 
-  * Return -1 on failure of updation, 1 on successful updation.
-**/
-int update_current_pos(hero *h, int x, int y);
-
-/**
-  * Updates h->dest_x_pos, h->dest_y_pos to x,y respectively. Reads the global State.MAP (TODO: Define state).
-**/
-
-void update_dest_pos(hero *h, int x, int y);
-
-/**
-  * Updates h->health by integer(+ or -) update. The updated is limited to [0, h->max_health]. 
-  * Updates h->state to DEAD if new h->health reaches 0.
-**/  
-int update_health(hero *h, int update);
-
-/**
-  * Updates h->movement_speed by integer(+ or -) update. The updated is limited to [1, 2^(sizeof_int_in_bits()-1)].
-**/  
-int update_movement_speed(hero *h, int update);
+	
+	public : 
 
 
-/**
-  * Updates h->attack_speed by integer(+ or -) update. The updated is limited to [1, 2^(sizeof_int_in_bits()-1)].
-**/  
-int update_attack_speed(hero *h, int update);
+	/**
+	 * Creates hero by reading filename from heros folder. If filename does not exist, game exits.
+	 **/  
+	Hero(int hid);
+	
 
-/**
-  * Returns the current position of h.
-**/  
-point_t get_curr_pos(hero *h);
+	/**
+	 * Adds new_item to item_bag of h. Does not add item_new if it exceeds item_bag.bag_capacity.
+	 **/  
+	void add_to_item_bag(item *new_item);
 
-/**
-  * Renders the hero on screen.
-**/  
-void render_hero(hero *h);
+	/**
+	 * Updates h->curr_x_pos, h->curr_y_pos to x,y respectively. Reads the global State.MAP (TODO: Define state).
+	 * Retains old values if, new (x,y) tuple is occupied by some non-collectible (i.e. other hero or tree) in MAP, or (x,y) lies outside of MAP. 
+	 * Return -1 on failure of updation, 1 on successful updation.
+	 **/
+	int update_current_pos(int x, int y);
+
+	/**
+	 * Updates h->dest_x_pos, h->dest_y_pos to x,y respectively. Reads the global State.MAP (TODO: Define state).
+	 **/
+
+	void update_dest_pos( int x, int y);
+
+	/**
+	 * Updates h->health by integer(+ or -) update. The updated is limited to [0, h->max_health]. 
+	 * Updates h->state to DEAD if new h->health reaches 0.
+	 **/  
+	int update_health(int update);
+
+	/**
+	 * Updates h->movement_speed by integer(+ or -) update. The updated is limited to [1, 2^(sizeof_int_in_bits()-1)].
+	 **/  
+	int update_movement_speed( int update);
+
+
+	/**
+	 * Updates h->attack_speed by integer(+ or -) update. The updated is limited to [1, 2^(sizeof_int_in_bits()-1)].
+	 **/  
+	int update_attack_speed( int update);
+
+	/**
+	 * Returns the current position of h.
+	 **/  
+	point_t get_curr_pos();
+
+	/**
+	 * Renders the hero on screen.
+	void render_hero(hero *h);
+	 **/  
+};
 #endif
