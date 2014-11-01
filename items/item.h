@@ -1,4 +1,5 @@
-#ifdef ITEM_H
+#ifndef ITEM_H
+#define ITEM_H
 typedef struct item{
 	int item_id;
 	int movement_speed;
