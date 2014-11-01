@@ -133,10 +133,10 @@ Map = [['.' for i in range(cols)] for j in range(rows)]
 
 
 #Print Rows and cols:
-print "ROWS: ", rows
-print "COLS: ", cols
+print "ROWS: ", rows, " "
+print "COLS: ", cols, " "
 #Draw Fight Margin
-print "WAR_BORBER_OFFSET: ", rows/6
+print "WAR_BORDER_OFFSET: ", rows/6, " "
 DrawMargin(Map, rows/6)
 
 # Draw Territories
@@ -155,9 +155,9 @@ Coord_list = DrawCircle(cols/2+cols/6, rows/2-rows/6, int(rows*0.065), FULL, Map
 print "TEAM_B_TEMPLE_BORDER: ", len(Coord_list), print_Coord_list(Coord_list)
 
 Fill(Map, rows/2-rows/6, cols/2-cols/6, 'a')
-print "A_TEAM_TEMPLE_CENTER: ", str(rows/2-rows/6), str(cols/2-cols/6)
+print "A_TEAM_TEMPLE_CENTER: ", str(rows/2-rows/6), str(cols/2-cols/6), " "
 Fill(Map, rows/2+rows/6, cols/2+cols/6, 'b')
-print "B_TEAM_TEMPLE_CENTER: ", str(rows/2+rows/6), str(cols/2+cols/6)
+print "B_TEAM_TEMPLE_CENTER: ", str(rows/2+rows/6), str(cols/2+cols/6), " "
 
 # Draw Jungle
 L, U = GenCoordList(rows*cols*0.025, Map)
