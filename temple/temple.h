@@ -1,16 +1,8 @@
-#ifdef TEMPLE_H
-#include "../maps/map.h" 
-
+#ifndef TEMPLE_H
+#define TEMPLE_H
+#include "../maps/map.h"
 #define DEMOLISHED	0
 #define PRESERVED	1
-
-typedef struct temple_t{
-	int pos_x, pos_y;
-	points_list boundary;
-	int health;
-	int max_health;
-	int state;
-}temple;
 
 /**
   * Returns pointer to malloced temple. init_temple() will be called by init_map() directly or indirectly.
