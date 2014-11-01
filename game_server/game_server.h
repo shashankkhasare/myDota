@@ -1,63 +1,41 @@
-/*
-point_t get_curr_pos(int h_id);
-
-
-void recv_cmd();
-*/
-
+#ifndef GAME_SERV
+#define GAME_SERV
 #include "../maps/map.h"
+#include "../player/player.h"
+#include "../common/communication_structures.h"
+#include "../heros/hero.h"
+#include<netinet/in.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <ifaddrs.h>
+#include<unistd.h>
+#include<iostream>
+#include<stdlib.h>
+#include<vector>
+#include<string>
+#include<stdlib.h>
 
-
-	// map 
-	// player array
-	// 2 threads, 1 constantly broadcasting the rendering information
-	// 	      2 constantly reading the input buffer, which would be filled by the client only. Redirecting each command received 
-	// 	        to the appropriate player connected to the server
-	// Each player is an independent thread running on the server machine, which reads its input buffer which is being filled by the server
-	// and accordingly updating the game data structures, for eg the map, the item status and so on. 
-	
-
+using namespace std; 
 class Server {
 
-	// members 
-	Map map; 
+	Map m;
 	int port; 
+	int player_count =0;
 
-	// constructor
-	Server(char *map_file, int port);
+	vector<Player*> players;
 
-	/* Start server, 
-	 * this will bind a socket to the said port and start listening to the commands
-	 *
-	 * */
-	bool StartServer();
-
+	public : 
+	Server(char * map_file, int port);
 	/* Start game, 
 	 * will check if the clients have joined in and ready 
 	 * Will start the actual play of the game 
 	 * */
-	bool StartServer(){
+	void startServer(struct sockaddr_in);
+	void serve_connection(struct sockaddr_in client , int sock_fd) ;
+};
 
 
-	}
 
 
 
-
-}
-
-
-Server::Server(char *map_file, int port){
-	// Instantiate map
-	Map m(map_file);
-	Server::map = m;
-
-	Server::port = port; 
-}
-
-
-bool Server:StartServer(){
-
-
-}
-
+#endif 
