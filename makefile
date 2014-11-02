@@ -3,10 +3,30 @@ EXEC_NAME = mydota
 BASIC_C = main.cpp
 OPENGL_FLAGS = -lSDL
 
-all		: $(EXEC_NAME)
+all : server menu client
 
-$(EXEC_NAME)	: $(BASIC_C)
-	$(CC) -w -o $(EXEC_NAME) $(BASIC_C) $(OPENGL_FLAGS)
+server : subparts
+	g++ game_server/game_server.o player/player.o heros/hero.o maps/map.o parser/parser.o -o gameserver
+
+menu: menu.o
+	g++ -w -g main.o -o mydota -lSDL
+menu.o :main.cpp
+	g++ -c -w main.cpp -lSDL
+
+subparts:
+	cd heros ; make
+	cd parser; make
+	cd player; make
+	cd maps; make
+	cd game_server; make
+
+client: game_client/client.cpp game_client/client.h
+	cd game_client; make
 
 clean:
-	rm $(EXEC_NAME)
+	rm  mydota gameserver client main.o 
+	cd heros ; make clean
+	cd parser; make clean
+	cd player; make clean
+	cd maps; make clean
+	cd game_server; make clean
