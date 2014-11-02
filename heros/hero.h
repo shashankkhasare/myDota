@@ -30,7 +30,7 @@ typedef struct item_bag{
 }item_bag;
 
 class  Hero{
-	int h_id;
+	int hid;
 	char symbol_on_map;
 	int team_tag;
 	int mpower_id;	//TODO: This will be replaced by magic_t variable in future.
@@ -55,6 +55,8 @@ class  Hero{
 	 * Creates hero by reading filename from heros folder. If filename does not exist, game exits.
 	 **/  
 	Hero(int hid);
+	Hero();
+	void init(int h); 
 	
 
 	/**

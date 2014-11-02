@@ -15,17 +15,22 @@
 #include<string>
 #include<stdlib.h>
 
+#define debug 1
+
 using namespace std; 
 class Server {
 
 	Map m;
 	int port; 
 	int player_count =0;
+	int max_players;
+	vector<int> team_a; 
+	vector<int> team_b; 
 
-	vector<Player*> players;
+	Player players[4];
 
 	public : 
-	Server(char * map_file, int port);
+	Server(char * map_file, int port, int max_players);
 	/* Start game, 
 	 * will check if the clients have joined in and ready 
 	 * Will start the actual play of the game 

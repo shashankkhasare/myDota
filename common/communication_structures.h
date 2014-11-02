@@ -4,7 +4,8 @@
 #define OK 			0
 #define OPEN_INPUT_CHANNEL 	1
 #define OPEN_BCAST_CHANNEL 	2
-#define COMMAND_FOLLOWS 	3
+#define ACCEPTED 		3 
+#define REJECTED 		4 
 
 
 typedef struct header{
