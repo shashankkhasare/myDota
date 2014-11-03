@@ -2,6 +2,7 @@
 #include "../common/communication_structures.h"
 #include "../common/defines.h"
 #include "../Widget.h"
+#include<stdlib.h>
 
 using namespace std; 
 int getSocket(char *ip, int  port);
@@ -25,10 +26,10 @@ void send_hid_and_settle_team(int sock)
 
 
 
-	Widget h1("images/h1.bmp", NULL, 10, 10, 200, 200);
-	Widget h2("images/h2.bmp", NULL, 250, 10, 200, 200);
-	Widget h3("images/h3.bmp", NULL, 10, 250, 200, 200);
-	Widget h4("images/h4.bmp", NULL, 250, 250, 200, 200);
+	Widget h1("images/h1.bmp", "images/h1_hover.bmp", 10, 10, 200, 200);
+	Widget h2("images/h2.bmp", "images/h2_hover.bmp", 250, 10, 200, 200);
+	Widget h3("images/h3.bmp", "images/h3_hover.bmp", 10, 250, 200, 200);
+	Widget h4("images/h4.bmp", "images/h4_hover.bmp", 250, 250, 200, 200);
 
 
 
@@ -39,13 +40,6 @@ void send_hid_and_settle_team(int sock)
 	Widget teamb_full("images/full.bmp", NULL, 50, 150, 400, 87);
 	Widget allteamsfull("images/allteamsfull.bmp", NULL, 50, 150, 441, 87);
 
-
-	SDL_BlitSurface(menu.getSurface(), NULL, screen, menu.getRectAddr());
-
-	SDL_BlitSurface(h1.getSurface(), NULL, screen, h1.getRectAddr());
-	SDL_BlitSurface(h2.getSurface(), NULL, screen, h2.getRectAddr());
-	SDL_BlitSurface(h3.getSurface(), NULL, screen, h3.getRectAddr());
-	SDL_BlitSurface(h4.getSurface(), NULL, screen, h4.getRectAddr());
 
 
 
@@ -70,10 +64,18 @@ void send_hid_and_settle_team(int sock)
 						running = 0;
 					break;	
 
+				case SDL_MOUSEMOTION:
+						h1.handleHover(e);
+						h2.handleHover(e);
+						h3.handleHover(e);
+						h4.handleHover(e);
+					break;
+
 				case SDL_MOUSEBUTTONDOWN: 
 					if ( areallteamsfull)
 					{
 						running = 0 ; 
+						exit(0);
 						break;
 					}
 					if ( e.button.button == SDL_BUTTON_LEFT){
@@ -86,7 +88,8 @@ void send_hid_and_settle_team(int sock)
 								if ( debug ) if ( d.data == OK ) cout << "debug :: Ok received for hid \n";
 								if ( d.data == REJECTED)
 									areallteamsfull = 1 ; 
-								team_screen =1	;
+								else
+									team_screen =1	;
 							}else if ( h2.isInRange(e.button.x, e.button.y )){
 								d.data = 2; 
 								send(sock, &d, sizeof(d), 0);
@@ -94,15 +97,17 @@ void send_hid_and_settle_team(int sock)
 								if ( debug ) if ( d.data == OK ) cout << "debug :: Ok received for hid \n";
 								if ( d.data == REJECTED)
 									areallteamsfull = 1 ; 
-								team_screen =1	;
-							}else if ( h2.isInRange(e.button.x, e.button.y )){
+								else
+									team_screen =1	;
+							}else if ( h3.isInRange(e.button.x, e.button.y )){
 								d.data = 3; 
 								send(sock, &d, sizeof(d), 0);
 								recv(sock, &d, sizeof(d), 0);
 								if ( debug ) if ( d.data == OK ) cout << "debug :: Ok received for hid \n";
 								if ( d.data == REJECTED)
 									areallteamsfull = 1 ; 
-								team_screen =1	;
+								else
+									team_screen =1	;
 							}else if ( h4.isInRange(e.button.x, e.button.y )){
 								d.data = 4; 
 								send(sock, &d, sizeof(d), 0);
@@ -110,7 +115,8 @@ void send_hid_and_settle_team(int sock)
 								if ( debug ) if ( d.data == OK ) cout << "debug :: Ok received for hid \n";
 								if ( d.data == REJECTED)
 									areallteamsfull = 1 ; 
-								team_screen =1	;
+								else
+									team_screen =1	;
 							} 
 						}
 						else{
@@ -156,14 +162,12 @@ void send_hid_and_settle_team(int sock)
 						cout << "Right button click on  : (" << e.button.x << " , " << e.button.y << ")" << endl; 
 					}
 					break;
-				case SDL_MOUSEMOTION:
-					break;
 
 			}
 		}
+		SDL_BlitSurface(menu.getSurface(), NULL, screen, menu.getRectAddr());
 		if ( team_screen)
 		{
-			SDL_BlitSurface(menu.getSurface(), NULL, screen, menu.getRectAddr());
 			if (isteamafull)
 				SDL_BlitSurface(teama_full.getSurface(), NULL, screen, teama_full.getRectAddr());
 			else
@@ -173,11 +177,16 @@ void send_hid_and_settle_team(int sock)
 			else
 				SDL_BlitSurface(teamb.getSurface(), NULL, screen, teamb.getRectAddr());
 
-		}
-		if ( areallteamsfull){
+		} else if ( areallteamsfull){
 
-			SDL_BlitSurface(menu.getSurface(), NULL, screen, menu.getRectAddr());
 			SDL_BlitSurface(allteamsfull.getSurface(), NULL, screen, allteamsfull.getRectAddr());
+		}else 
+		{
+
+			SDL_BlitSurface(h1.getSurface(), NULL, screen, h1.getRectAddr());
+			SDL_BlitSurface(h2.getSurface(), NULL, screen, h2.getRectAddr());
+			SDL_BlitSurface(h3.getSurface(), NULL, screen, h3.getRectAddr());
+			SDL_BlitSurface(h4.getSurface(), NULL, screen, h4.getRectAddr());
 		}
 		SDL_Flip(screen);
 
@@ -221,9 +230,13 @@ Client::Client(char * address, int port ,  int mode){
 }
 void Client::start(){
 
-
-	//pthread_t tid ; 
-	//pthread_create(&tid, NULL, renderer , NULL);
+ // 1. start the thread for receiving the updates from the server and update the said data structures 
+ // 		this thread will reply OK to each bcast message, which will be as a heartbeat to the server
+ //
+ // 2. This thread itself must read all the data structures and render the screen and also send the commands to the server on the ipc 
+ //
+ // tasks : 
+ // 	1. Develop bcast message protocol 
 	char map[75][76] = {
 		"wwwwwwwwwwwwW....J...JJ....J.J........J....8........2....3.......BBBBBBBBBB",
 		"wwwwwwwwwwJwwWW.J.......................J........JJ..............BBBBBBBBBB",

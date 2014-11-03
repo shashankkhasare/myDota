@@ -4,3 +4,6 @@ all : client.o
 client.o : client.cpp   client.h
 	g++ -c -w client.cpp -lSDL
 
+clean : 
+	rm client.o 
+
