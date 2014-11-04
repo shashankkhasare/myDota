@@ -30,11 +30,12 @@ typedef struct item_bag{
 }item_bag;
 
 class  Hero{
+	public : 
 	int hid;
 	char symbol_on_map;
 	int team_tag;
 	int mpower_id;	//TODO: This will be replaced by magic_t variable in future.
-	int health;
+	int health = 97;
 	int max_health;
 	int movement_speed;
 	int attack_speed;
@@ -48,7 +49,6 @@ class  Hero{
 	int curr_path_index;	
 	//TODO: Maybe we can add input_buffer, function pointer drive here only. After this, there won't be any player folder.
 	
-	public : 
 
 
 	/**
