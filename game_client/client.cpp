@@ -7,6 +7,38 @@
 using namespace std; 
 int getSocket(char *ip, int  port);
 
+// healths 
+int temple_a_health; 
+int temple_b_health; 
+
+int p0_health; 
+int p1_health; 
+int p2_health; 
+int p3_health; 
+
+// input command socket and bcast socket 
+int ipc_sock; 
+int bcast_sock;
+
+
+int hid; 
+int teamid; 
+int mode; 
+int pid; 
+
+int state = STATE_BEFORE_START; 
+
+char terrain[75][75];
+
+void print_terrain()
+{
+	for ( int i =0 ; i < 75 ; i ++ ) 
+	{ 
+		for ( int j =  0 ; j < 75  ;  j++)
+			cout << terrain[i][j] << " " ; 
+		cout << endl; 
+	}
+}
 void send_hid_and_settle_team(int sock)
 {
 
@@ -65,10 +97,10 @@ void send_hid_and_settle_team(int sock)
 					break;	
 
 				case SDL_MOUSEMOTION:
-						h1.handleHover(e);
-						h2.handleHover(e);
-						h3.handleHover(e);
-						h4.handleHover(e);
+					h1.handleHover(e);
+					h2.handleHover(e);
+					h3.handleHover(e);
+					h4.handleHover(e);
 					break;
 
 				case SDL_MOUSEBUTTONDOWN: 
@@ -134,7 +166,7 @@ void send_hid_and_settle_team(int sock)
 								}else
 								{
 
-								if (debug) cout << "debug :: Team 1 selection successful " << endl; 
+									if (debug) cout << "debug :: Team 1 selection successful " << endl; 
 									running = 0 ; 
 								}
 
@@ -197,9 +229,10 @@ void send_hid_and_settle_team(int sock)
 }
 
 
-Client::Client(char * address, int port ,  int mode){
+Client::Client(char * address, int port ,  int m){
 	// setting vars 
-	Client::mode = mode; 
+	mode = m; 
+
 
 	// open input channel and send hid 
 	ipc_sock = getSocket(address, port );	
@@ -210,7 +243,7 @@ Client::Client(char * address, int port ,  int mode){
 	h.type = OPEN_INPUT_CHANNEL; 
 	send(ipc_sock, &h, sizeof(h), 0);
 	recv(ipc_sock, &d, sizeof(d), 0); 
-	
+
 	if ( debug && d.data== OK)
 		cout << "debug :: Received ok "<< endl;
 	// get hid and settle team 
@@ -227,92 +260,96 @@ Client::Client(char * address, int port ,  int mode){
 	h.type = OPEN_BCAST_CHANNEL;
 	send(bcast_sock, &h, sizeof(h), 0);
 	send(bcast_sock, &d, sizeof(d), 0);
+	recv(bcast_sock, &h, sizeof(h), 0); 
+	if(h.type == OK ){
+		if ( debug ) cout << "debug :: received OK for opening bcast channel \n";
+	}
+	else 
+		cout << "Invalid reply from server for open bcast channel \n";
+
+}
+
+
+void *  bcast_receiver(void *This){
+
+	header h, reply ;  
+	health_t health;
+	if ( debug ) cout << "debug :: Started the bcast receiver " << endl; 
+	while ( true){
+		recv(bcast_sock, &h, sizeof(h), 0);
+		reply.type = OK;
+		send(bcast_sock, &reply, sizeof(reply), 0); 
+
+		if (h.type == BCAST_TERRAIN){
+			if ( debug ) cout << "debug :: Ok sent waiting for terrain bcast data \n";
+			recv(bcast_sock, terrain, 75 * 75 , 0); 
+			reply.type = OK;
+			send(bcast_sock, &reply, sizeof(reply), 0); 
+			if ( debug ) cout << "debug :: received terrain and replied ok to it\n";
+			print_terrain();
+
+		}else if ( h.type == BCAST_HEALTH){
+			if ( debug ) cout << "debug :: Ok sent waiting for health bcast data \n";
+			recv(bcast_sock, &health,sizeof(health) , 0); 
+			reply.type = OK;
+			send(bcast_sock, &reply, sizeof(reply), 0); 
+			if ( health.id == 0 ) {
+				if ( debug) cout << "Received health of player 0 : " << health.value << endl;
+				p0_health = health.value;
+			}else if ( health.id == 1 ) {
+				if ( debug) cout << "Received health of player 1 : " << health.value << endl;
+				p1_health = health.value;
+			}else if ( health.id == 2 ) {
+				if ( debug) cout << "Received health of player 2 : " << health.value << endl;
+				p2_health = health.value;
+			}else if ( health.id == 3 ) {
+				if ( debug) cout << "Received health of player 3 : " << health.value << endl;
+				p3_health = health.value;
+			}else if ( health.id == TEMPLE_A_ID ) {
+				if ( debug) cout << "Received health of temple a  : " << health.value << endl;
+				temple_a_health = health.value;
+			}else if ( health.id == TEMPLE_B_ID ) {
+				if ( debug) cout << "Received health of temple b : " << health.value << endl;
+				temple_b_health= health.value;
+			}else {
+				if(debug) cout << "Received health with unknown id : " << health.id << endl; 
+			}
+		}else if ( h.type == BCAST_GAME_STATE ){
+			if(debug) cout << "Game state change bcast received " << endl; 
+			intdata d; 
+			recv(bcast_sock, &d, sizeof(d), 0);
+			reply.type = OK;
+			send(bcast_sock, &reply, sizeof(reply), 0); 
+			if ( d.data == STATE_BEFORE_START ) 
+			{
+				if ( debug ) cout << "Game state changed to : " << "before start\n";
+				state = d.data; 
+			}else if ( d.data == STATE_STARTED ) {
+				if ( debug ) cout << "Game state changed to : " <<  " started \n " ; 
+				state = d.data; 
+
+			}else if ( d.data == STATE_PAUSED){
+				if ( debug ) cout << "Game state changed to : " << "paused \n "; 
+				state = d.data; 
+			}else {
+				if ( debug ) cout << "Unknown game state received \n";  
+			}
+
+		}else {
+			if(debug) cout << " Received unknown bcast message : " << h.type << endl; 
+		}
+	}
 }
 void Client::start(){
 
- // 1. start the thread for receiving the updates from the server and update the said data structures 
- // 		this thread will reply OK to each bcast message, which will be as a heartbeat to the server
- //
- // 2. This thread itself must read all the data structures and render the screen and also send the commands to the server on the ipc 
- //
- // tasks : 
- // 	1. Develop bcast message protocol 
-	char map[75][76] = {
-		"wwwwwwwwwwwwW....J...JJ....J.J........J....8........2....3.......BBBBBBBBBB",
-		"wwwwwwwwwwJwwWW.J.......................J........JJ..............BBBBBBBBBB",
-		"wwwwwwwwwwwwwWW......J....J................................J.....BBBBBBBBBB",
-		"wwwwwwwwwwwwJJwWW...............9.J...7...J......4................BBBBBBBBB",
-		"wwwwwwwwwwJwJwwWWJ...................J...................J........BBBBBBBBB",
-		"wwwwJww6wwwwwwwwwWW..JJ....J.........................J.........2.5.BBBBBBBB",
-		"wwwwwwwwwwwwwwwwJWW..............J..............7.4...........J....BBBBBBBB",
-		"wwwwwwwwwwwwwwwwwwwW....................................9.......J...BBBBBBB",
-		"wwJwwwwwwwwwwwwwwwww............J.................................J.6.BBBBB",
-		"wwwwwwwwwwwwwwwwwwwwwW.J..........................JJ....................BBB",
-		"wwwwwwwwwwwwwwwwwwwwwwW.7....J.............J.J.........8.J7......J.....J.J.",
-		"wwwwwwww6wwwwwJwJwwwwwwW5.............J....J...............................",
-		"WwwwwwwwwwwwwwwwwwwwwwwwW........J.......................J..........8.J....",
-		".WwwwwwwwwwwwwwJ7wwwwwwwwW............J.........J..................J.......",
-		"..WwwJwwwwwwwwwwwwwwwwwwwwW.......J........J..J...J..........J...4.........",
-		"..JWwJwwwwJwww5wwJwwwwwwwwwW....J.........5.......J..J....J................",
-		"....WwwwwwJwwwwwwwwwJwww4ww4W............2..........J5......J....J.J....J..",
-		".....WwwwwwwwwwwwwwwwwwwwwwwwW...........J..5..........................JJ..",
-		"......WwwwJwwwwwwwwwwJJwwwwJww...J.........................................",
-		".......WwwwwwwwwwwwwwwwwwwJwwJwWJ..5.J......6..............................",
-		".........wwwwwwwwwwwwwwwwwwwwwwwW....J................J....4...............",
-		".........WwwwwwwwwwwwwwwwaaawwwwwW..........JJ.........................9...",
-		"J.JJJ.....WwwwwwwwwwwwwwaaaaawwwwwW.....................J..................",
-		"...6....5..WwJwwwwwwwwwaaaaaaawwwwwW.............J...............J...9JJ...",
-		".J.......J8.WwwwwwwwwwaaaaaaaaawwwwwW....6..7.................J....J.......",
-		".4...........WwwwwwwwwaaaaaaaaawwwwJwW........J...J.............5........J.",
-		"......J.......WwwwwwJ4aaaaaaaaawwwwwwwW...8...J........J............J......",
-		"...............Wwwwww8JaaaaaaawwwwwwwwwW.........J.........J....3...J......",
-		".J5.............Wwwwwwwwaaaaawwwwwwwwwww...................................",
-		".......J9.45..2..WwwwwwwwaaawwwwwJwwwwwwwW............J5...........J.......",
-		"....6..............wwwwwww2wwwwwwwwwJwwwwwW..................7.............",
-		".J.................WwwwwwwwwwwwwwwwwwwwwwwwWJ.......J......................",
-		"....................WwwwwwwwwwwwwwwwwwwwwwwwW..............................",
-		"........J.......5....Wwwwwwwwwww7wwwwwwwwwwwwW....J.............3JJ...6....",
-		"J.............J.......WwwwwwwwwwwwwJJJwwwwwwwwW............................",
-		"..1...................JWwwwwwJwwwwwwJwwwwwwwwwwW..J.....J.............1....",
-		"...J..........J.........Wwwwwwwww1wwwwwwwwwwwwwwW.........J................",
-		"......5..J.......J.......WwwwwwwwwwwwwwwwwwwwwwwwW..........8..J...........",
-		"....J.....J...............Www5w3wwwwwwwwwwwwwwwww7.....7.9.................",
-		"3....7...J............J....WwwwwwwwwwwwwwwwwwwwwwwwW.......J...............",
-		"J..............J..J.J.J..2...wJwwwwww7wwwwwwwwwwwwwwW.........J............",
-		".4.J7....3...................WwwwwwJwwwwwwwww4wwwwwwwW...5....J......3.....",
-		"................J.............WwwwwwwwwwwwwwwJwwwwwwwwW.................J..",
-		"..J..............JJ............WJwwJJwwwwwww4wwwwwwJwwwW.............J.....",
-		"...........J....................WwwJwwwwwwwwwwwwwwwwww1wW.............8....",
-		"......5.J.J.............J4..J....WwwwwwwwwwwwwwwwbbbwwwwwW.................",
-		"......J........J.....J.........7..WwwwwwwwwwwwwwbbbbbwwwwwW................",
-		"J..........................J.......WwwwwwwwwwwwbbbbbbbwwwwwW...............",
-		"..................J...J........J....Wwwwwwwwwwbbbbbbbbbwwwww............J..",
-		".............J.......J...............W4wwwwwwwbbbbbbbbbwwwwwwW.............",
-		"........J...............J.......J..J...wJwwwwwbbbbbbbbbwwwwwwwWJ...........",
-		"....................3..................WwwJwwwwbbbbbbbwwwwwww6wW...........",
-		".......................6..J...........J.Wwww9wwwbbbbbwwwwwwwwwwwW..........",
-		"......8.................J................WwwwwwwwbbbwwJwwwJwwwww7W.........",
-		"..........................J...............WwwwJwwwwwwwwwwwwJwwwwwwW.J......",
-		"........J................................J.WwwwwwwwwwwwwwwwJJww4wwwW.......",
-		"...J.............................6..........WwwwwwwwwwwwwwJwwwwwwwwwW......",
-		"...............J.......8....................JWwwwwwwwwwwwwJwwwJwwwwwwW..J..",
-		"......................J......J................WwwwwwwJwwwwwwwwwwwwwwww.....",
-		".J.............JJ..J................J..J.......WwwwwwJwwwJwwwwwwwwwwwwwW...",
-		"J........J......................J................wwwww8wwwwwwwwwwwwwwwwwW..",
-		"....J.............J...........J...........J....J.Www7wwwwwwwwwwwwwwwwwwwwW.",
-		".J......J........J....3..J...............J...7....WwwwwwwwwwwwwwwwwwwwwwwwW",
-		"................................J............4.....WwwwwwwwwwwJwwwwwwwJwwww",
-		"........J..............J...........................JWwwwJwJwwwwwwwwwJwwwwww",
-		"AAA.............J..7..J..............................Wwwwwwwwwwwwwwwwwwwwww",
-		"AAAAA....J.........................J.8......7.........Wwwwwwwwwwwwwwwwwwwww",
-		"AAAAAAA.........J...................J..................Wwwwwwwwwwwwwwww8www",
-		"AAAAAAAA.9......J..................................J....Wwwwwwwwwwwwwwwwwww",
-		"AAAAAAAA.......5....8.............J......................Wwwwwwwwwwwwwwwwww",
-		"AAAAAAAAA...............J........J..............J..........wwwwwwwwwwww3www",
-		"AAAAAAAAA.J.......J......7.4..........J6.J.9........J......WJwJwwwwwwwJwwww",
-		"AAAAAAAAAA....................J.....................J..J....WwJwwwwJwwwwwww",
-		"AAAAAAAAAA............J...4......9.......J....J..............WwwwwwJwwwwwww",
-		"AAAAAAAAAA....................................................Wwwwwwwwwwwww"};
+	// 1. start the thread for receiving the updates from the server and update the said data structures 
+	// 		this thread will reply OK to each bcast message, which will be as a heartbeat to the server
+	//
+	// 2. This thread itself must read all the data structures and render the screen and also send the commands to the server on the ipc 
+	//
+
+	pthread_t tid; 
+	pthread_create(&tid, NULL , bcast_receiver, NULL);
 	SDL_Init(SDL_INIT_EVERYTHING);
 
 	SDL_Surface *screen, *fw, *tw, *w, *t, *it, *frame;
@@ -323,13 +360,10 @@ void Client::start(){
 	w = SDL_DisplayFormat(SDL_LoadBMP("renderer/btree15_c.bmp"));
 	t = SDL_DisplayFormat(SDL_LoadBMP("renderer/Temple1.bmp"));
 	it = SDL_DisplayFormat(SDL_LoadBMP("renderer/items.bmp"));
-	//frame= SDL_DisplayFormat(SDL_LoadBMP("renderer/frame.bmp"));
 
-	if ( debug )  cout << "Done till here " << endl; 
 	SDL_SetColorKey(tw, SDL_SRCCOLORKEY, SDL_MapRGB(screen->format, 0xff, 0xff, 0xff));	
 	SDL_SetColorKey(w, SDL_SRCCOLORKEY, SDL_MapRGB(screen->format, 0xff, 0xff, 0xff));	
 	SDL_SetColorKey(t, SDL_SRCCOLORKEY, SDL_MapRGB(screen->format, 0xff, 0xff, 0xff));	
-	//SDL_SetColorKey(frame, SDL_SRCCOLORKEY, SDL_MapRGB(screen->format, 0xff, 0xff, 0xff));	
 
 	//Background Grass	
 	int i, j;
@@ -339,12 +373,6 @@ void Client::start(){
 	r.x = 12;
 	r.y = 12;
 	SDL_BlitSurface(fw, NULL, screen, &r);
-	// frame
-	//	r.w = 774;
-	//	r.h = 768;
-	//	r.x = 0;
-	//	r.y = 0;
-	//	SDL_BlitSurface(frame, NULL, screen, &r);
 
 	//Temples
 	r.w = 90;
@@ -364,37 +392,37 @@ void Client::start(){
 		item[i].w = 10;
 		item[i].h = 10;
 	}
-	for(i=0;i<75;i++)
-		for(j=0;j<75;j++)
-			if(map[i][j] >= '1' && map[i][j] <= '9'){
-				r.x = 10*j;
-				r.y = 10*i;
-				SDL_BlitSurface(it, &item[map[i][j]-'1'], screen, &r);
-			}
-
-	//Jungle
-	r.w = 15;
-	r.h = 15;
-	for(i=0; i<75; i++){
-		for(j = 0; j<75; j++){
-			if(map[i][j] == 'J'){
-				r.x = 10*j;
-				r.y = 10*i;
-				SDL_BlitSurface(tw, NULL, screen, &r);
-			}
-			else if	(map[i][j] == 'W'){
-				r.x = 10*j;
-				r.y = 10*i;
-				SDL_BlitSurface(w, NULL, screen, &r);
-			}
-		}	
-	}		
 
 	int running = 1;
 	while(running){
 		Uint32 start = SDL_GetTicks();
 		SDL_Event e;
 
+		for(i=0;i<75;i++)
+			for(j=0;j<75;j++)
+				if(terrain[i][j] >= '1' && terrain[i][j] <= '9'){
+					r.x = 10*j;
+					r.y = 10*i;
+					SDL_BlitSurface(it, &item[terrain[i][j]-'1'], screen, &r);
+				}
+
+		//Jungle
+		r.w = 15;
+		r.h = 15;
+		for(i=0; i<75; i++){
+			for(j = 0; j<75; j++){
+				if(terrain[i][j] == 'J'){
+					r.x = 10*j;
+					r.y = 10*i;
+					SDL_BlitSurface(tw, NULL, screen, &r);
+				}
+				else if	(terrain[i][j] == 'W'){
+					r.x = 10*j;
+					r.y = 10*i;
+					SDL_BlitSurface(w, NULL, screen, &r);
+				}
+			}	
+		}		
 		while(SDL_PollEvent(&e)){
 			switch(e.type){
 				case SDL_QUIT:
@@ -404,6 +432,15 @@ void Client::start(){
 					if(e.key.keysym.sym == SDLK_ESCAPE)
 						running = 0;
 					break;	
+				case SDL_MOUSEBUTTONDOWN: 
+					if ( e.button.button == SDL_BUTTON_LEFT){
+						// attack command 
+					}else
+					{
+						// move 
+					}
+					break;
+
 			}
 		}
 		SDL_Flip(screen);

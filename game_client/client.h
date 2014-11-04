@@ -5,6 +5,7 @@
 #include<iostream>
 #include "../common/mode.h"
 #include "../common/communication_structures.h"
+#include "../common/defines.h"
 #include<netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
@@ -30,17 +31,12 @@ class Client {
 	 * */
 
 
-	int hid; 
-	int teamid; 
-	int mode; 
-	int pid; 
-
-	// input command socket and bcast socket 
-	int ipc_sock; 
-	int bcast_sock;
-
-
 public:
+
+
+	pthread_t tid; 
+
+
 	Client(char * server_address, int port ,  int mode);
 	void start();
 

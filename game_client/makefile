@@ -1,8 +1,8 @@
 all : client.o
-	g++ -w client.o -o ../client -lSDL
+	g++ -w client.o -o ../client -lSDL -lpthread
    
 client.o : client.cpp   client.h
-	g++ -c -w client.cpp -lSDL
+	g++ -c -w client.cpp -lSDL -lpthread
 
 clean : 
 	rm client.o 

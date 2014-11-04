@@ -1,5 +1,5 @@
-game_server.o: game_server.cpp game_server.h
-	g++ -c  -w game_server.cpp
+game_server.o: game_server.cpp 
+	g++ -c  -w game_server.cpp -lpthread
 
 clean:
 	rm game_server.o
