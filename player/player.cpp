@@ -1,9 +1,12 @@
 #include "player.h"
 #include "../common/communication_structures.h"
+
 Player::Player(int playerid, int ip_fd, sockaddr_in addr,  Hero h):hero(h){
 	pid = playerid; 
 	input_fd = ip_fd;
 	address = addr; 
+
+	//Player::m = m; 
 
 
 
@@ -23,6 +26,6 @@ void Player::init(int playerid, int ip_fd, sockaddr_in addr,  Hero h){
 }
 
 void Player::setBcastChannel(int sock){
-	bcast_fd = sock;
+	bcast_sock= sock;
 }
 

@@ -9,13 +9,13 @@
 #include <iostream>
 class Player{
 
+	public:
 	int pid; 
-	int input_fd;
-	int bcast_fd; 
 	sockaddr_in address;
 	Hero hero; 
 
-	public:
+	int input_fd;
+	int bcast_sock; 
 	Player(int playerid, int ip_fd, sockaddr_in addr,  Hero h);
 	void init(int playerid, int ip_fd, sockaddr_in addr,  Hero h);
 	Player();
