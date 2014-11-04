@@ -9,8 +9,8 @@
 #include <string>
 #include <iostream>
 
-#define TEAM_A			0
-#define TEAM_B			1
+#define TEAM_A		0
+#define TEAM_B		1
 
 #define DEMOLISHED	0
 #define PRESERVED	1
@@ -46,7 +46,7 @@ typedef struct temple_t{
 
 
 class Map{
-	//public:
+	public:
 	int rows;
 	int cols;
 	int war_border_offset; 
@@ -56,14 +56,11 @@ class Map{
 	temple temple_a, temple_b;
 	point spawn_locations[2];
 
-	public:
+	//public:
 
-	//path_t get_shortest_path(int src_x, int src_y, int dest_x, int dest_y);
 	path_t get_shortest_path(point src, point dest);
-	float euclidean_dist(int x1, int y1, int x2, int y2);
 	float euclidean_dist(point src, point dest);
-	bool is_line_of_sight_clear(int x1, int y1, int x2, int y2);
-	bool is_line_of_sight_clear(point src, point dest);
+	path_t is_line_of_sight_clear(point src, point dest);
 	bool is_empty_location(int x, int y);
 	char get_location_content(point t);
 	void modify_location_content(point t, char c);
