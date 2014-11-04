@@ -290,7 +290,7 @@ char Map::get_location_content(point t){
   * Returns euclidean distance between (x1, y1) and (x2, y2).
 **/  
 float Map::euclidean_dist(point src, point dest){
-	//return euclidean_dist(src.x, src.y , dest.x, dest.y);
+	return sqrt(pow(src.x-dest.x,2)+pow(src.y-dest.y,2));
 }
 
 /**

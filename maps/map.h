@@ -9,8 +9,8 @@
 #include <string>
 #include <iostream>
 
-#define TEAM_A			0
-#define TEAM_B			1
+#define TEAM_A		0
+#define TEAM_B		1
 
 #define DEMOLISHED	0
 #define PRESERVED	1
@@ -58,7 +58,6 @@ class Map{
 
 	//public:
 
-	//path_t get_shortest_path(int src_x, int src_y, int dest_x, int dest_y);
 	path_t get_shortest_path(point src, point dest);
 	float euclidean_dist(point src, point dest);
 	path_t is_line_of_sight_clear(point src, point dest);
