@@ -73,8 +73,10 @@ Map::Map(char *map_file){
 					infile >> terrain[i][j];
 		}
 	}
-	spawn_locations[0] = {0, rows-1};
-	spawn_locations[1] = {cols-1, 0};
+	spawn_locations[0].x = 0;
+	spawn_locations[0].y = rows-1;
+	spawn_locations[1].x = cols-1;
+	spawn_locations[1].y = 0;
 	temple_a.health = temple_b.health = 2000;
 	temple_a.max_health = temple_b.max_health = 2000;
 	temple_a.state = temple_b.state = PRESERVED;
@@ -287,25 +289,65 @@ char Map::get_location_content(point t){
 /**
   * Returns euclidean distance between (x1, y1) and (x2, y2).
 **/  
-float Map::euclidean_dist(int x1, int y1, int x2, int y2){
-
-
-}
-
 float Map::euclidean_dist(point src, point dest){
-	return euclidean_dist(src.x, src.y , dest.x, dest.y);
+	//return euclidean_dist(src.x, src.y , dest.x, dest.y);
 }
 
 /**
   * Returns 1 if straight line (constucted using naive_line_drawaing_algo() Source: Wikipedia) 
   * between (x1, y1) and (x2, y2) has only '.'s. Else return 0;
 **/  
-bool Map::is_line_of_sight_clear(int x1, int y1, int x2, int y2){
-
-}
-
-bool Map::is_line_of_sight_clear(point src, point dest){
-	return is_line_of_sight_clear(src.x, src.y , dest.x, dest.y);
+path_t Map::is_line_of_sight_clear(point src, point dest){
+	int x0 = src.x, y0 = src.y, x1 = dest.x, y1 = dest.y;
+	queue<point> pts;
+	point p;
+	int dx = abs(x1 - x0);
+	int dy = abs(y1 - y0);
+	int x = x0, y = y0;
+	
+	int sx = (x0 > x1) ? -1:1;
+	int sy = (y0 > y1) ? -1:1;
+	if(dx > dy){
+		float err =  ((float)dx) / 2.0;
+		while(x != x1){
+			p.x = x, p.y = y;
+			pts.push(p);
+			err -= dy*1.0;
+			if (err < 0.0){
+				y += sy;
+				err += dx*1.0;
+			}	
+			x += sx;
+		}	
+	}		
+	else{
+		float err = ((float)dy) / 2.0;
+		while(y != y1){
+			p.x = x, p.y = y;
+			pts.push(p);
+			err -= dx*1.0;
+			if(err < 0.0){
+				x += sx;
+				err += dy*1.0;
+			}	
+			y += sy;        
+		}	
+	}		
+	p.x = x, p.y = y;
+	pts.push(p);
+	path_t ans;
+	ans.last_path_index = -1;
+	while(!pts.empty()){
+		if(!is_empty_location(pts.front().x, pts.front().y)){
+			ans.last_path_index = -1;
+			break;
+		}
+		ans.last_path_index += 1;
+		ans.path[ans.last_path_index][0] = (char)(pts.front().x & 255);
+		ans.path[ans.last_path_index][1] = (char)(pts.front().y & 255);
+		pts.pop();
+	}
+	return ans;
 }
 
 /**
