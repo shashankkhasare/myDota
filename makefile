@@ -19,7 +19,7 @@ subparts:
 	cd maps; make
 	cd game_server; make
 
-client: game_client/client.cpp game_client/client.h
+client: game_client/client.cpp game_client/client.h Entity.h Widget.h 
 	cd game_client; make
 
 clean:

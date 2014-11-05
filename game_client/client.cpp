@@ -2,7 +2,9 @@
 #include "../common/communication_structures.h"
 #include "../common/defines.h"
 #include "../Widget.h"
+#include "../Entity.h"
 #include<stdlib.h>
+#include<unistd.h>
 
 using namespace std; 
 int getSocket(char *ip, int  port);
@@ -25,6 +27,9 @@ int hid;
 int teamid; 
 int mode; 
 int pid; 
+
+bool setMouseTarget = false; 
+int mouse_x  =0 , mouse_y=0; 
 
 int state = STATE_BEFORE_START; 
 
@@ -266,7 +271,6 @@ Client::Client(char * address, int port ,  int m){
 	}
 	else 
 		cout << "Invalid reply from server for open bcast channel \n";
-
 }
 
 
@@ -286,7 +290,6 @@ void *  bcast_receiver(void *This){
 			reply.type = OK;
 			send(bcast_sock, &reply, sizeof(reply), 0); 
 			if ( debug ) cout << "debug :: received terrain and replied ok to it\n";
-			print_terrain();
 
 		}else if ( h.type == BCAST_HEALTH){
 			if ( debug ) cout << "debug :: Ok sent waiting for health bcast data \n";
@@ -352,77 +355,117 @@ void Client::start(){
 	pthread_create(&tid, NULL , bcast_receiver, NULL);
 	SDL_Init(SDL_INIT_EVERYTHING);
 
-	SDL_Surface *screen, *fw, *tw, *w, *t, *it, *frame;
+	SDL_Surface *screen; 
 	screen = SDL_SetVideoMode(750,750,32,SDL_SWSURFACE);
 
-	fw = SDL_DisplayFormat(SDL_LoadBMP("renderer/wfree750.bmp"));  //Required for transparnecy
-	tw = SDL_DisplayFormat(SDL_LoadBMP("renderer/wtree.bmp"));
-	w = SDL_DisplayFormat(SDL_LoadBMP("renderer/btree15_c.bmp"));
-	t = SDL_DisplayFormat(SDL_LoadBMP("renderer/Temple1.bmp"));
-	it = SDL_DisplayFormat(SDL_LoadBMP("renderer/items.bmp"));
 
-	SDL_SetColorKey(tw, SDL_SRCCOLORKEY, SDL_MapRGB(screen->format, 0xff, 0xff, 0xff));	
-	SDL_SetColorKey(w, SDL_SRCCOLORKEY, SDL_MapRGB(screen->format, 0xff, 0xff, 0xff));	
-	SDL_SetColorKey(t, SDL_SRCCOLORKEY, SDL_MapRGB(screen->format, 0xff, 0xff, 0xff));	
+	Widget fw("images/wfree750.bmp", NULL,0,0,750, 750 );
+	Widget tw("images/tree.bmp",NULL, 0, 0, 15, 15 );
+	Widget w("images/pillar.bmp", NULL, 0, 0, 15, 15);
 
-	//Background Grass	
-	int i, j;
-	SDL_Rect r;
-	r.w = 750;
-	r.h = 750;
-	r.x = 12;
-	r.y = 12;
-	SDL_BlitSurface(fw, NULL, screen, &r);
+
+	tw.deleteWhite(screen);
+	w.deleteWhite(screen);
+
+	
+
+
 
 	//Temples
-	r.w = 90;
-	r.h = 90;
-	r.x = 22*10;
-	r.y = 21*10;
-	SDL_BlitSurface(t, NULL, screen, &r);
-	r.x = 46*10;
-	r.y = 45*10;
-	SDL_BlitSurface(t, NULL, screen, &r);	
+	Entity t1("images/temple1.bmp",22 * 10 , 21 * 10 , 90, 95);
+	t1.setHealth(100);
+	t1.setNitro(0);
+	t1.setBGScreen(screen);
+
+	Entity t2("images/temple2.bmp",46 * 10 , 45 * 10 , 90, 95);
+	t2.setHealth(100);
+	t2.setNitro(0);
+	t2.setBGScreen(screen);
 
 	//Items
-	SDL_Rect item[9];
-	for(i=0;i<9;i++){
-		item[i].x = 10*i;
-		item[i].y = 0;
-		item[i].w = 10;
-		item[i].h = 10;
+	Widget item[7] = {Widget("images/items/nike.bmp", NULL), 
+	Widget("images/items/supernike.bmp", NULL),
+	Widget("images/items/hammer.bmp", NULL),
+	Widget("images/items/superhammer.bmp", NULL),
+	Widget("images/items/banana.bmp", NULL),
+	Widget("images/items/redhot.bmp", NULL),
+	Widget("images/items/toolbox.bmp", NULL)};
+	for(int i=0;i<7;i++){
+		item[i].setDim(20, 20) ; 
+		item[i].deleteWhite(screen);
 	}
+
+	Entity m1("images/m1.bmp", 170 , 250 , 20, 20) ; 
+	m1.setHealth(87); 
+	m1.setNitro(12);
+	m1.setBGScreen(screen);
+
+	Entity m2("images/m2.bmp", 170 , 230 , 20, 20) ; 
+	m2.setHealth(87); 
+	m2.setNitro(12);
+	m2.setBGScreen(screen);
+
+	Entity m3("images/m3.bmp", 170 , 210 , 20, 20) ; 
+	m3.setHealth(87); 
+	m3.setNitro(12);
+	m3.setBGScreen(screen);
+
+
+	Entity m4("images/m4.bmp", 170 , 190 , 20, 20) ; 
+	m4.setHealth(87); 
+	m4.setNitro(12);
+	m4.setBGScreen(screen);
+
+	Widget target("images/target.bmp" , NULL, 0 , 0 , 20 , 20  ) ; 
 
 	int running = 1;
 	while(running){
 		Uint32 start = SDL_GetTicks();
 		SDL_Event e;
 
-		for(i=0;i<75;i++)
-			for(j=0;j<75;j++)
-				if(terrain[i][j] >= '1' && terrain[i][j] <= '9'){
-					r.x = 10*j;
-					r.y = 10*i;
-					SDL_BlitSurface(it, &item[terrain[i][j]-'1'], screen, &r);
+		//Background Grass	
+		SDL_BlitSurface(fw.getSurface(), NULL, screen, fw.getRectAddr());
+
+		for(int i=0;i<75;i++)
+			for(int j=0;j<75;j++)
+				if(terrain[i][j] >= '1' && terrain[i][j] <= '7'){
+					item[terrain[i][j] -'1'].setLocation(10 * j, 10 * i); 
+					SDL_BlitSurface(item[terrain[i][j] - '1'].getSurface(), NULL, screen,item[terrain[i][j] - '1'].getRectAddr() );
 				}
 
 		//Jungle
-		r.w = 15;
-		r.h = 15;
-		for(i=0; i<75; i++){
-			for(j = 0; j<75; j++){
+		
+		tw.setDim(15, 15);
+		w.setDim(15, 15);
+		for(int i=0; i<75; i++){
+			for(int j = 0; j<75; j++){
 				if(terrain[i][j] == 'J'){
-					r.x = 10*j;
-					r.y = 10*i;
-					SDL_BlitSurface(tw, NULL, screen, &r);
+					tw.setLocation(10*j, 10*i);
+					SDL_BlitSurface(tw.getSurface(), NULL, screen, tw.getRectAddr());
 				}
 				else if	(terrain[i][j] == 'W'){
-					r.x = 10*j;
-					r.y = 10*i;
-					SDL_BlitSurface(w, NULL, screen, &r);
+					w.setLocation(10*j, 10*i);
+					SDL_BlitSurface(w.getSurface(), NULL, screen, w.getRectAddr());
 				}
 			}	
-		}		
+		}
+		SDL_BlitSurface(t1.getSurface(), NULL, screen, t1.getRectAddr());
+		SDL_BlitSurface(t2.getSurface(), NULL, screen, t2.getRectAddr());
+		SDL_BlitSurface(m1.getSurface(), NULL, screen, m1.getRectAddr());
+		SDL_BlitSurface(m2.getSurface(), NULL, screen, m2.getRectAddr());
+		SDL_BlitSurface(m3.getSurface(), NULL, screen, m3.getRectAddr());
+		SDL_BlitSurface(m4.getSurface(), NULL, screen, m4.getRectAddr());
+		if ( setMouseTarget){
+			SDL_ShowCursor(0);
+			target.setLocation(mouse_x -10, mouse_y -10);
+			target.deleteWhite(screen);
+			SDL_BlitSurface(target.getSurface(), NULL, screen, target.getRectAddr());
+
+		}else{
+
+			SDL_ShowCursor(1);
+		}
+		
 		while(SDL_PollEvent(&e)){
 			switch(e.type){
 				case SDL_QUIT:
@@ -440,6 +483,21 @@ void Client::start(){
 						// move 
 					}
 					break;
+				case SDL_MOUSEMOTION:
+				if ( m1.isInRange(e.button.x, e.button.y ) || 	
+				m2.isInRange(e.button.x, e.button.y ) || 	
+				m3.isInRange(e.button.x, e.button.y ) || 	
+				m4.isInRange(e.button.x, e.button.y ) || 	
+				t1.isInRange(e.button.x, e.button.y ) || 	
+				t2.isInRange(e.button.x, e.button.y )){
+					mouse_x = e.button.x; 
+					mouse_y = e.button.y ; 
+					setMouseTarget = true;
+				}else
+				{
+					setMouseTarget = false;
+				}
+
 
 			}
 		}
@@ -447,6 +505,7 @@ void Client::start(){
 
 		if(1000/30 > SDL_GetTicks()-start)
 			SDL_Delay(1000/30 - (SDL_GetTicks()-start));
+			//SDL_Delay(100);
 	}
 
 }
