@@ -1,32 +1,49 @@
 #include "client.h"
 #include "../common/communication_structures.h"
+#include "../common/bcast.h"
+#include "../common/defines.h"
+#include "../common/ipc.h"
 #include "../common/defines.h"
 #include "../Widget.h"
 #include "../Entity.h"
 #include<stdlib.h>
 #include<unistd.h>
 
+
+#define debug 		1
+#define debugcommand 	1
+#define debugbcast 		1
+
+#define P0CHAR 		'P'
+#define P1CHAR 		'Q'
+#define P2CHAR 		'R'
+#define P3CHAR 		'S'
+
+#define M1_IMAGE "images/m1.bmp"
+#define M2_IMAGE "images/m2.bmp"
+#define M3_IMAGE "images/m3.bmp"
+#define M4_IMAGE "images/m4.bmp"
+
 using namespace std; 
 int getSocket(char *ip, int  port);
 
-// healths 
-int temple_a_health; 
-int temple_b_health; 
 
-int p0_health; 
-int p1_health; 
-int p2_health; 
-int p3_health; 
+
+player_data_t playerdata[4] = {0};
+player_data_t temple_a_data = {TEMPLE_A_ID, 2000, 0, -1, TEAM_A};
+player_data_t temple_b_data = {TEMPLE_B_ID, 2000, 0, -1, TEAM_B}; 
+
+
+//Entity p0_e, p1_e, p2_e, p3_e; 
+
 
 // input command socket and bcast socket 
 int ipc_sock; 
 int bcast_sock;
 
-
-int hid; 
-int teamid; 
-int mode; 
-int pid; 
+int pid;
+int gamemode ;
+int gamestate = STATE_BEFORE_START; 
 
 bool setMouseTarget = false; 
 int mouse_x  =0 , mouse_y=0; 
@@ -44,6 +61,74 @@ void print_terrain()
 		cout << endl; 
 	}
 }
+
+void update_entities(Entity *p0_e, Entity *p1_e,Entity *p2_e,Entity *p3_e, Entity * ta_e, Entity * tb_e){
+
+	p0_e->setHealth(playerdata[0].health);
+	p1_e->setHealth(playerdata[1].health);
+	p2_e->setHealth(playerdata[2].health);
+	p3_e->setHealth(playerdata[3].health);
+
+	p0_e->setNitro(playerdata[0].nitro * 20 );
+	p1_e->setNitro(playerdata[1].nitro * 20 );
+	p2_e->setNitro(playerdata[2].nitro * 20 );
+	p3_e->setNitro(playerdata[3].nitro * 20 );
+
+	ta_e->setHealth(temple_a_data.health  / 20 );
+	tb_e->setHealth(temple_b_data.health  / 20 );
+
+}
+void send_useitem_x_command(int item ) 
+{
+	cmd_t cmd; 
+	header head; 
+
+	cmd.command = CMD_USEITEM_X;
+	cmd.x = item; 
+	if ( debugcommand ) cout << "debugcommand :: sending the command to server CMD_USEITEM_X \n";
+	send(ipc_sock, &cmd, sizeof(cmd), 0);
+	recv(ipc_sock, &head, sizeof(head), 0 ) ; 
+	if ( head.type == OK ) 
+	{
+		if ( debugcommand ) cout << "debugcommand :: send the command and received ok from server \n";
+	}else 
+		cout << "Error :: unknown reply from server for the CMD_USEITEM_X command \n";
+
+}
+
+void send_grab_item_x_y_command( int x, int y ) {
+	cmd_t cmd; 
+	header head; 
+	cmd.command = CMD_GRABITEM_X_Y;
+	cmd.x = x; 
+	cmd.y = y; 
+	if ( debugcommand ) cout << "debugcommand :: sending the command to server CMD_GRABITEM_X_Y\n";
+	send(ipc_sock, &cmd, sizeof(cmd), 0);
+	recv(ipc_sock, &head, sizeof(head), 0 ) ; 
+	if ( head.type == OK ) 
+	{
+		if ( debugcommand ) cout << "debugcommand :: send the command and received ok from server \n";
+	}else 
+		cout << "Error :: unknown reply from server for the CMD_GRABITEM_X_Y command \n";
+
+}
+void send_goto_x_y_command(int x, int y ) {
+	cmd_t cmd; 
+	header head; 
+	cmd.command = CMD_GOTO_X_Y ;
+	cmd.x = x; 
+	cmd.y = y; 
+	if ( debugcommand ) cout << "debugcommand :: sending the command to server CMD_GOTO_X_Y\n";
+	send(ipc_sock, &cmd, sizeof(cmd), 0);
+	recv(ipc_sock, &head, sizeof(head), 0 ) ; 
+	if ( head.type == OK ) 
+	{
+		if ( debugcommand ) cout << "debugcommand :: send the command and received ok from server \n";
+	}else 
+		cout << "Error :: unknown reply from server for the CMD_GOTO_X_Y command \n";
+
+}
+
 void send_hid_and_settle_team(int sock)
 {
 
@@ -119,7 +204,7 @@ void send_hid_and_settle_team(int sock)
 						cout << e.button.x << "  " << e.button.y ; 
 						if ( !team_screen){
 							if ( h1.isInRange(e.button.x, e.button.y )){
-								d.data = 1; 
+								d.data = 0; 
 								send(sock, &d, sizeof(d), 0);
 								recv(sock, &d, sizeof(d), 0);
 								if ( debug ) if ( d.data == OK ) cout << "debug :: Ok received for hid \n";
@@ -128,7 +213,7 @@ void send_hid_and_settle_team(int sock)
 								else
 									team_screen =1	;
 							}else if ( h2.isInRange(e.button.x, e.button.y )){
-								d.data = 2; 
+								d.data = 1; 
 								send(sock, &d, sizeof(d), 0);
 								recv(sock, &d, sizeof(d), 0);
 								if ( debug ) if ( d.data == OK ) cout << "debug :: Ok received for hid \n";
@@ -137,7 +222,7 @@ void send_hid_and_settle_team(int sock)
 								else
 									team_screen =1	;
 							}else if ( h3.isInRange(e.button.x, e.button.y )){
-								d.data = 3; 
+								d.data = 2; 
 								send(sock, &d, sizeof(d), 0);
 								recv(sock, &d, sizeof(d), 0);
 								if ( debug ) if ( d.data == OK ) cout << "debug :: Ok received for hid \n";
@@ -146,7 +231,7 @@ void send_hid_and_settle_team(int sock)
 								else
 									team_screen =1	;
 							}else if ( h4.isInRange(e.button.x, e.button.y )){
-								d.data = 4; 
+								d.data = 3; 
 								send(sock, &d, sizeof(d), 0);
 								recv(sock, &d, sizeof(d), 0);
 								if ( debug ) if ( d.data == OK ) cout << "debug :: Ok received for hid \n";
@@ -236,7 +321,7 @@ void send_hid_and_settle_team(int sock)
 
 Client::Client(char * address, int port ,  int m){
 	// setting vars 
-	mode = m; 
+	//gamemode = m; 
 
 
 	// open input channel and send hid 
@@ -277,70 +362,91 @@ Client::Client(char * address, int port ,  int m){
 void *  bcast_receiver(void *This){
 
 	header h, reply ;  
-	health_t health;
-	if ( debug ) cout << "debug :: Started the bcast receiver " << endl; 
+	if ( debugbcast) cout << "debugbcast:: Started the bcast receiver " << endl; 
 	while ( true){
 		recv(bcast_sock, &h, sizeof(h), 0);
 		reply.type = OK;
 		send(bcast_sock, &reply, sizeof(reply), 0); 
 
 		if (h.type == BCAST_TERRAIN){
-			if ( debug ) cout << "debug :: Ok sent waiting for terrain bcast data \n";
-			recv(bcast_sock, terrain, 75 * 75 , 0); 
-			reply.type = OK;
-			send(bcast_sock, &reply, sizeof(reply), 0); 
-			if ( debug ) cout << "debug :: received terrain and replied ok to it\n";
+			if ( debugbcast) cout << "debugbcast:: Ok sent waiting for terrain bcast data \n";
+			int actual, expected;
+			int index, offset, ret; 
+			expected = 75 * 75; 
+			actual = 0 ; 
+			while(actual != expected){
+				index = actual / 75 ; 
+				offset = actual % 75;
+				ret = recv(bcast_sock, terrain[index] + offset  , 75 * 75 - actual , 0); 
+				if ( ret != -1 ) 
+				{
+					actual += ret ; 
 
-		}else if ( h.type == BCAST_HEALTH){
-			if ( debug ) cout << "debug :: Ok sent waiting for health bcast data \n";
-			recv(bcast_sock, &health,sizeof(health) , 0); 
+				}else {
+					cout << "Error :: recv returned -1 \n";
+
+				}
+				cout << "Terrain received : " << actual << " / " << expected  << endl; 
+			}
 			reply.type = OK;
 			send(bcast_sock, &reply, sizeof(reply), 0); 
-			if ( health.id == 0 ) {
-				if ( debug) cout << "Received health of player 0 : " << health.value << endl;
-				p0_health = health.value;
-			}else if ( health.id == 1 ) {
-				if ( debug) cout << "Received health of player 1 : " << health.value << endl;
-				p1_health = health.value;
-			}else if ( health.id == 2 ) {
-				if ( debug) cout << "Received health of player 2 : " << health.value << endl;
-				p2_health = health.value;
-			}else if ( health.id == 3 ) {
-				if ( debug) cout << "Received health of player 3 : " << health.value << endl;
-				p3_health = health.value;
-			}else if ( health.id == TEMPLE_A_ID ) {
-				if ( debug) cout << "Received health of temple a  : " << health.value << endl;
-				temple_a_health = health.value;
-			}else if ( health.id == TEMPLE_B_ID ) {
-				if ( debug) cout << "Received health of temple b : " << health.value << endl;
-				temple_b_health= health.value;
+			if ( debugbcast) cout << "debugbcast:: received terrain and replied ok to it\n";
+
+		}else if ( h.type == BCAST_PLAYER_DATA){
+			player_data_t pdata;
+			if ( debugbcast) cout << "debugbcast:: Ok sent waiting for the player bcast data  \n";
+			recv(bcast_sock, &pdata,sizeof(pdata) , 0); 
+			reply.type = OK;
+			send(bcast_sock, &reply, sizeof(reply), 0); 
+			if ( debugbcast) cout << "debugbcast:: received player data and replied ok\n";
+			if ( pdata.id >= 0 && pdata.id <= 3) {
+				if ( debugbcast) cout << "Received data of player " << pdata.id;
+				if ( debugbcast) cout << " Health : " << pdata.health; 
+				if ( debugbcast) cout << " Nitro  : " << pdata.nitro; 
+				if ( debugbcast) cout << " HID    : " << pdata.hid; 
+				if ( debugbcast) cout << " Team   : " << (pdata.team ? "TEAM B " : "TEAM A" ) << endl; 
+
+				playerdata[pdata.id] = pdata;
+
+			}else if ( pdata.id == TEMPLE_A_ID ) {
+				if ( debugbcast) cout << "Received data of temple a \n";
+				temple_a_data = pdata;
+				if ( debugbcast) cout << "Received data temple a \n";
+				if ( debugbcast) cout << " Health : " << pdata.health; 
+				if ( debugbcast) cout << " Nitro  : " << pdata.nitro; 
+				if ( debugbcast) cout << " HID    : " << pdata.hid; 
+				if ( debugbcast) cout << " Team   : " << (pdata.team ? "TEAM B " : "TEAM A") ; 
+			}else if ( pdata.id == TEMPLE_B_ID ) {
+				if ( debugbcast) cout << "Received data of temple b \n";
+				temple_b_data = pdata;
 			}else {
-				if(debug) cout << "Received health with unknown id : " << health.id << endl; 
+				if(debugbcast) cout << "Received data  with invalid id : " << pdata.id << endl;
 			}
 		}else if ( h.type == BCAST_GAME_STATE ){
-			if(debug) cout << "Game state change bcast received " << endl; 
+			if(debugbcast) cout << "Game state change bcast received " << endl; 
 			intdata d; 
 			recv(bcast_sock, &d, sizeof(d), 0);
 			reply.type = OK;
 			send(bcast_sock, &reply, sizeof(reply), 0); 
 			if ( d.data == STATE_BEFORE_START ) 
 			{
-				if ( debug ) cout << "Game state changed to : " << "before start\n";
+				if ( debugbcast) cout << "Game state changed to : " << "before start\n";
 				state = d.data; 
 			}else if ( d.data == STATE_STARTED ) {
-				if ( debug ) cout << "Game state changed to : " <<  " started \n " ; 
+				if ( debugbcast) cout << "Game state changed to : " <<  " started \n " ; 
 				state = d.data; 
 
 			}else if ( d.data == STATE_PAUSED){
-				if ( debug ) cout << "Game state changed to : " << "paused \n "; 
+				if ( debugbcast) cout << "Game state changed to : " << "paused \n "; 
 				state = d.data; 
 			}else {
-				if ( debug ) cout << "Unknown game state received \n";  
-			}
-
-		}else {
-			if(debug) cout << " Received unknown bcast message : " << h.type << endl; 
+				if ( debugbcast) cout << "Unknown game state received \n";  
+			}	
 		}
+		else {
+			if(debugbcast) cout << " Received unknown bcast message : " << h.type << endl; 
+		}
+
 	}
 }
 void Client::start(){
@@ -352,6 +458,8 @@ void Client::start(){
 	//
 
 	pthread_t tid; 
+	cmd_t cmd; 
+	header head; 
 	pthread_create(&tid, NULL , bcast_receiver, NULL);
 	SDL_Init(SDL_INIT_EVERYTHING);
 
@@ -367,54 +475,160 @@ void Client::start(){
 	tw.deleteWhite(screen);
 	w.deleteWhite(screen);
 
-	
 
 
 
-	//Temples
-	Entity t1("images/temple1.bmp",22 * 10 , 21 * 10 , 90, 95);
-	t1.setHealth(100);
-	t1.setNitro(0);
-	t1.setBGScreen(screen);
 
-	Entity t2("images/temple2.bmp",46 * 10 , 45 * 10 , 90, 95);
-	t2.setHealth(100);
-	t2.setNitro(0);
-	t2.setBGScreen(screen);
 
 	//Items
 	Widget item[7] = {Widget("images/items/nike.bmp", NULL), 
-	Widget("images/items/supernike.bmp", NULL),
-	Widget("images/items/hammer.bmp", NULL),
-	Widget("images/items/superhammer.bmp", NULL),
-	Widget("images/items/banana.bmp", NULL),
-	Widget("images/items/redhot.bmp", NULL),
-	Widget("images/items/toolbox.bmp", NULL)};
+		Widget("images/items/supernike.bmp", NULL),
+		Widget("images/items/hammer.bmp", NULL),
+		Widget("images/items/superhammer.bmp", NULL),
+		Widget("images/items/banana.bmp", NULL),
+		Widget("images/items/redhot.bmp", NULL),
+		Widget("images/items/toolbox.bmp", NULL)};
 	for(int i=0;i<7;i++){
 		item[i].setDim(20, 20) ; 
 		item[i].deleteWhite(screen);
 	}
+/*	
+	Entity p00_e(M1_IMAGE, 170 , 190 , 20, 20) ; 
+	Entity p01_e(M2_IMAGE, 170 , 190 , 20, 20) ; 
+	Entity p02_e(M3_IMAGE, 170 , 190 , 20, 20) ; 
+	Entity p03_e(M4_IMAGE, 170 , 190 , 20, 20) ; 
 
-	Entity m1("images/m1.bmp", 170 , 250 , 20, 20) ; 
-	m1.setHealth(87); 
-	m1.setNitro(12);
-	m1.setBGScreen(screen);
+	Entity p10_e(M1_IMAGE, 170 , 190 , 20, 20) ; 
+	Entity p11_e(M2_IMAGE, 170 , 190 , 20, 20) ; 
+	Entity p12_e(M3_IMAGE, 170 , 190 , 20, 20) ; 
+	Entity p13_e(M4_IMAGE, 170 , 190 , 20, 20) ; 
 
-	Entity m2("images/m2.bmp", 170 , 230 , 20, 20) ; 
-	m2.setHealth(87); 
-	m2.setNitro(12);
-	m2.setBGScreen(screen);
+	Entity p20_e(M1_IMAGE, 170 , 190 , 20, 20) ; 
+	Entity p21_e(M2_IMAGE, 170 , 190 , 20, 20) ; 
+	Entity p22_e(M3_IMAGE, 170 , 190 , 20, 20) ; 
+	Entity p23_e(M4_IMAGE, 170 , 190 , 20, 20) ; 
 
-	Entity m3("images/m3.bmp", 170 , 210 , 20, 20) ; 
-	m3.setHealth(87); 
-	m3.setNitro(12);
-	m3.setBGScreen(screen);
+	Entity p30_e(M1_IMAGE, 170 , 190 , 20, 20) ; 
+	Entity p31_e(M2_IMAGE, 170 , 190 , 20, 20) ; 
+	Entity p32_e(M3_IMAGE, 170 , 190 , 20, 20) ; 
+	Entity p33_e(M4_IMAGE, 170 , 190 , 20, 20) ; 
+*/
+	//Entity p0_e, p1_e, p2_e, p3_e;
+
+	Entity p0_e(NULL, 170 , 190 , 20, 20) ; 
+	Entity p1_e(NULL, 170 , 190 , 20, 20) ; 
+	Entity p2_e(NULL, 170 , 190 , 20, 20) ; 
+	Entity p3_e(NULL, 170 , 190 , 20, 20) ; 
+	/*
+	while(playerdata[0].team + playerdata[1].team + playerdata[2].team + playerdata[3].team < 2 ) usleep(50000);*/
+	
+	// fix for captain america bug 
+	SDL_Surface * loading ; 
+	loading = SDL_DisplayFormat(SDL_LoadBMP("images/loading.bmp"));
+	SDL_BlitSurface(loading, NULL, screen,NULL);
+	SDL_Flip(screen);
+	sleep(5);
+	SDL_FreeSurface(loading);
+	switch(playerdata[0].hid){
+		case 0: 
+			p0_e.setImage(M1_IMAGE);
+			break;
+		case 1: 
+			p0_e.setImage(M2_IMAGE);
+			break;
+		case 2: 
+			p0_e.setImage(M3_IMAGE);
+			break;
+		case 3: 
+			p0_e.setImage(M4_IMAGE);
+			break;
+		default:
+			cout << "FATAL ERROR : invalid HID \n";
+	}
+	switch(playerdata[1].hid){
+		case 0: 
+			p1_e.setImage(M1_IMAGE);
+			break;
+		case 1: 
+			p1_e.setImage(M2_IMAGE);
+			break;
+		case 2: 
+			p1_e.setImage(M3_IMAGE);
+			break;
+		case 3: 
+			p1_e.setImage(M4_IMAGE);
+			break;
+		default:
+			cout << "FATAL ERROR : invalid HID \n";
+	}
+
+	switch(playerdata[2].hid){
+		case 0: 
+			p2_e.setImage(M1_IMAGE);
+			break;
+		case 1: 
+			p2_e.setImage(M2_IMAGE);
+			break;
+		case 2: 
+			p2_e.setImage(M3_IMAGE);
+			break;
+		case 3: 
+			p2_e.setImage(M4_IMAGE);
+			break;
+		default:
+			cout << "FATAL ERROR : invalid HID \n";
+	}
+	switch(playerdata[3].hid){
+		case 0: 
+			p3_e.setImage(M1_IMAGE);
+			break;
+		case 1: 
+			p3_e.setImage(M2_IMAGE);
+			break;
+		case 2: 
+			p3_e.setImage(M3_IMAGE);
+			break;
+		case 3: 
+			p3_e.setImage(M4_IMAGE);
+			break;
+		default:
+			cout << "FATAL ERROR : invalid HID \n";
+	}
+	p0_e.setHealth(100); 
+	p0_e.setNitro(100);
+	p0_e.setBGScreen(screen);
+
+	p1_e.setHealth(100); 
+	p1_e.setNitro(100);
+	p1_e.setBGScreen(screen);
+
+	p2_e.setHealth(100); 
+	p2_e.setNitro(100);
+	p2_e.setBGScreen(screen);
 
 
-	Entity m4("images/m4.bmp", 170 , 190 , 20, 20) ; 
-	m4.setHealth(87); 
-	m4.setNitro(12);
-	m4.setBGScreen(screen);
+	p3_e.setHealth(100); 
+	p3_e.setNitro(100);
+	p3_e.setBGScreen(screen);
+
+	p0_e.load_image();
+	p1_e.load_image();
+	p2_e.load_image();
+	p3_e.load_image();
+
+	//Temples
+	Entity ta_e("images/temple1.bmp",22 * 10 , 21 * 10 , 90, 95);
+	ta_e.setHealth(100);
+	ta_e.setNitro(0);
+	ta_e.setBGScreen(screen);
+
+	Entity tb_e("images/temple2.bmp",46 * 10 , 45 * 10 , 90, 95);
+	tb_e.setHealth(100);
+	tb_e.setNitro(0);
+	tb_e.setBGScreen(screen);
+
+	ta_e.load_image();
+	tb_e.load_image();
 
 	Widget target("images/target.bmp" , NULL, 0 , 0 , 20 , 20  ) ; 
 
@@ -425,36 +639,41 @@ void Client::start(){
 
 		//Background Grass	
 		SDL_BlitSurface(fw.getSurface(), NULL, screen, fw.getRectAddr());
+		update_entities(&p0_e, &p1_e, &p2_e, &p3_e, &ta_e, &tb_e);
 
-		for(int i=0;i<75;i++)
-			for(int j=0;j<75;j++)
+		// Blit the terrain and the players 
+		for(int i=0;i<75;i++){
+			for(int j=0;j<75;j++){
+				// items 
 				if(terrain[i][j] >= '1' && terrain[i][j] <= '7'){
 					item[terrain[i][j] -'1'].setLocation(10 * j, 10 * i); 
-					SDL_BlitSurface(item[terrain[i][j] - '1'].getSurface(), NULL, screen,item[terrain[i][j] - '1'].getRectAddr() );
-				}
-
-		//Jungle
-		
-		tw.setDim(15, 15);
-		w.setDim(15, 15);
-		for(int i=0; i<75; i++){
-			for(int j = 0; j<75; j++){
-				if(terrain[i][j] == 'J'){
+					SDL_BlitSurface(item[terrain[i][j] - '1'].getSurface(),
+							NULL, screen,
+							item[terrain[i][j] - '1'].getRectAddr() );
+				}else if(terrain[i][j] == 'J'){ // Jungle 
 					tw.setLocation(10*j, 10*i);
 					SDL_BlitSurface(tw.getSurface(), NULL, screen, tw.getRectAddr());
-				}
-				else if	(terrain[i][j] == 'W'){
+				}else if(terrain[i][j] == 'W'){ // Pillar 
 					w.setLocation(10*j, 10*i);
 					SDL_BlitSurface(w.getSurface(), NULL, screen, w.getRectAddr());
+				}else if(terrain[i][j] == P0CHAR){
+					p0_e.setLocation(10 * j , 10 * i);
+					SDL_BlitSurface(p0_e.getSurface(), NULL, screen, p0_e.getRectAddr());
+				}else if(terrain[i][j] == P1CHAR){
+					p1_e.setLocation(10 * j , 10 * i);
+					SDL_BlitSurface(p1_e.getSurface(), NULL, screen, p1_e.getRectAddr());
+				}else if(terrain[i][j] == P2CHAR){
+					p2_e.setLocation(10 * j , 10 * i);
+					SDL_BlitSurface(p2_e.getSurface(), NULL, screen, p2_e.getRectAddr());
+				}else if(terrain[i][j] == P3CHAR){
+					p3_e.setLocation(10 * j , 10 * i);
+					SDL_BlitSurface(p3_e.getSurface(), NULL, screen, p3_e.getRectAddr());
 				}
-			}	
+			}
 		}
-		SDL_BlitSurface(t1.getSurface(), NULL, screen, t1.getRectAddr());
-		SDL_BlitSurface(t2.getSurface(), NULL, screen, t2.getRectAddr());
-		SDL_BlitSurface(m1.getSurface(), NULL, screen, m1.getRectAddr());
-		SDL_BlitSurface(m2.getSurface(), NULL, screen, m2.getRectAddr());
-		SDL_BlitSurface(m3.getSurface(), NULL, screen, m3.getRectAddr());
-		SDL_BlitSurface(m4.getSurface(), NULL, screen, m4.getRectAddr());
+		// temples 
+		SDL_BlitSurface(ta_e.getSurface(), NULL, screen, ta_e.getRectAddr());
+		SDL_BlitSurface(tb_e.getSurface(), NULL, screen, tb_e.getRectAddr());
 		if ( setMouseTarget){
 			SDL_ShowCursor(0);
 			target.setLocation(mouse_x -10, mouse_y -10);
@@ -465,38 +684,112 @@ void Client::start(){
 
 			SDL_ShowCursor(1);
 		}
-		
+
 		while(SDL_PollEvent(&e)){
 			switch(e.type){
 				case SDL_QUIT:
 					running = 0;
+
+					cmd.command = CMD_QUIT;
+					if ( debugcommand) cout << "debugcommand:: sending the command to server CMD_QUIT \n";
+					send(ipc_sock, &cmd, sizeof(cmd), 0);
+					recv(ipc_sock, &head, sizeof(head), 0 ) ; 
+					if ( head.type == OK ) 
+					{
+						if ( debugcommand) cout << "debugcommand:: send the command and received ok from server \n";
+					}else 
+						cout << "Error :: unknown reply from server for the CMD_QUIT command \n";
 					break;
 				case SDL_KEYDOWN:
-					if(e.key.keysym.sym == SDLK_ESCAPE)
-						running = 0;
-					break;	
+					switch(e.key.keysym.sym ) 
+					{
+						case SDLK_ESCAPE : 
+							running = 0 ; 
+							break; 
+						case SDLK_1:
+							send_useitem_x_command(1);
+							break;
+						case SDLK_2:
+							send_useitem_x_command(2);
+							break;
+						case SDLK_3:
+							send_useitem_x_command(3);
+							break;
+						case SDLK_4:
+							send_useitem_x_command(4);
+							break;
+						case SDLK_5:
+							send_useitem_x_command(5);
+							break;
+						case SDLK_6:
+							send_useitem_x_command(6);
+							break;
+						case SDLK_7:
+							send_useitem_x_command(7);
+							break;
+						default:
+							break;
+					}
+					break;
+
 				case SDL_MOUSEBUTTONDOWN: 
 					if ( e.button.button == SDL_BUTTON_LEFT){
 						// attack command 
+						if ( p0_e.isInRange(e.button.x, e.button.y ) || 	
+								p1_e.isInRange(e.button.x, e.button.y ) || 	
+								p2_e.isInRange(e.button.x, e.button.y ) || 	
+								p3_e.isInRange(e.button.x, e.button.y ) || 	
+								ta_e.isInRange(e.button.x, e.button.y ) || 	
+								tb_e.isInRange(e.button.x, e.button.y )){
+							cmd.command = CMD_ATTACK_PID;
+							cmd.pid = 5; 
+							if ( debugcommand) cout << "debugcommand:: sending the command to server CMD_ATTACK_PID \n";
+							send(ipc_sock, &cmd, sizeof(cmd), 0);
+							recv(ipc_sock, &head, sizeof(head), 0 ) ; 
+							if ( head.type == OK ) 
+							{
+								if ( debugcommand) cout << "debugcommand:: send the command and received ok from server \n";
+							}else 
+								cout << "Error :: unknown reply from server for the CMD_ATTACK_PID command \n";
+
+						}
+						// check if item grab attempted
+
+
+						int gridx = (int) (e.button.x / 10.);
+						int gridy = (int) (e.button.y / 10.);
+						if (terrain[gridx][gridy] <= '7' && terrain[gridx][gridy] >= '1'){
+							send_grab_item_x_y_command(gridx, gridy);
+						}
 					}else
 					{
-						// move 
+
+						int gridx, gridy; 
+						gridx = (int) (e.button.x / 10.);
+						gridy = (int) (e.button.y / 10.);
+						if( terrain[gridx][gridy] == '.' || terrain[gridx][gridy] == 'w'){
+							if ( debugcommand) cout << "Coordinates " << e.button.x << " " << e.button.y << endl; 
+							if ( debugcommand) cout << "Grid points " << gridx << " " << gridy << endl; 
+							send_goto_x_y_command(gridx, gridy);
+						}
 					}
+
+
 					break;
 				case SDL_MOUSEMOTION:
-				if ( m1.isInRange(e.button.x, e.button.y ) || 	
-				m2.isInRange(e.button.x, e.button.y ) || 	
-				m3.isInRange(e.button.x, e.button.y ) || 	
-				m4.isInRange(e.button.x, e.button.y ) || 	
-				t1.isInRange(e.button.x, e.button.y ) || 	
-				t2.isInRange(e.button.x, e.button.y )){
-					mouse_x = e.button.x; 
-					mouse_y = e.button.y ; 
-					setMouseTarget = true;
-				}else
-				{
-					setMouseTarget = false;
-				}
+					if ( p0_e.isInRange(e.button.x, e.button.y ) || 	
+							p1_e.isInRange(e.button.x, e.button.y ) || 	
+							p2_e.isInRange(e.button.x, e.button.y ) || 	
+							p3_e.isInRange(e.button.x, e.button.y ) || 	
+							ta_e.isInRange(e.button.x, e.button.y ) || 	
+							tb_e.isInRange(e.button.x, e.button.y )){
+						mouse_x = e.button.x; 
+						mouse_y = e.button.y ; 
+						setMouseTarget = true;
+					}else
+					{
+						setMouseTarget = false;
+					}
 
 
 			}
@@ -505,7 +798,7 @@ void Client::start(){
 
 		if(1000/30 > SDL_GetTicks()-start)
 			SDL_Delay(1000/30 - (SDL_GetTicks()-start));
-			//SDL_Delay(100);
+		//SDL_Delay(100);
 	}
 
 }
@@ -515,7 +808,7 @@ int main(int argc, char * argv[])
 
 	if ( argc < 3 ) 
 	{
-		cout << "IP address and mode ( human / AIbot mode  ) and heroid  and teamid exptected \n";
+		cout << "IP address and mode ( human / AIbot mode  )  exptected \n";
 		cout << "Usage : ./client serverIP mode \n";
 		exit(0);
 	}
@@ -529,14 +822,14 @@ int main(int argc, char * argv[])
 	server.sin_port = htons(8181);
 
 
-	int mode = atoi(argv[2]);
+	int gamemode = atoi(argv[2]);
 
-	if ( mode == HUMAN){
+	if ( gamemode == HUMAN){
 		Client c(address, 8181,  HUMAN);
 		c.start();
 
 
-	}else if ( mode == AI )
+	}else if ( gamemode == AI )
 	{
 
 	}else

@@ -11,7 +11,6 @@
 #include <sys/socket.h>
 #include <ifaddrs.h>
 
-#define debug 1
 
 class Client {
 

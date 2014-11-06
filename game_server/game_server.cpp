@@ -3,6 +3,8 @@
 #include "../maps/map.h"
 #include "../player/player.h"
 #include "../common/communication_structures.h"
+#include "../common/bcast.h"
+#include "../common/ipc.h"
 #include "../heros/hero.h"
 #include<netinet/in.h>
 #include <arpa/inet.h>
@@ -16,7 +18,11 @@
 #include<stdlib.h>
 #include<unistd.h>
 #include<pthread.h>
+#include<poll.h>
+#include<fcntl.h>
 
+#define inputdebug 1
+#define bcastdebug 1
 #define debug 1
 using namespace std; 
 
@@ -29,12 +35,27 @@ Map m("maps/m1");
 vector<int> team_a; 
 vector<int> team_b; 
 
+int gamemode = STATE_BEFORE_START;
+
 
 
 void startServer(struct sockaddr_in);
 void serve_connection(struct sockaddr_in client , int sock_fd) ;
 void * bcast_sender(void * ) ; 
 
+
+int fd_set_blocking(int fd, int blocking) {
+	/* Save the current flags */
+	int flags = fcntl(fd, F_GETFL, 0);
+	if (flags == -1)
+		return 0;
+
+	if (blocking)
+		flags &= ~O_NONBLOCK;
+	else
+		flags |= O_NONBLOCK;
+	return fcntl(fd, F_SETFL, flags) != -1;
+}
 struct sockaddr_in getSelfAddress(){
 	struct ifaddrs *ifap, *ifa;
 	struct sockaddr_in *sa;
@@ -49,6 +70,36 @@ struct sockaddr_in getSelfAddress(){
 	}
 	freeifaddrs(ifap);
 	return ret;
+}
+void read_and_display_command(int sock){
+
+	cmd_t cmd; 
+	header reply; 
+	if ( -1 == recv(sock, &cmd, sizeof(cmd), 0)){
+		return;
+	}
+	reply.type = OK;
+	send(sock, &reply, sizeof(reply), 0);
+
+	switch(cmd.command){
+		case CMD_GOTO_X_Y:
+			if ( inputdebug ) cout << "inputdebug :: command CMD_GOTO_X_Y received " << cmd.x << " "  << cmd.y << endl;
+			break;
+		case CMD_ATTACK_PID:
+			if ( inputdebug ) cout << "inputdebug :: command CMD_ATTACK_PID received " <<  cmd.pid << endl;
+			break;
+		case CMD_USEITEM_X:
+			if ( inputdebug ) cout << "inputdebug :: command CMD_USEITEM_X received " <<  cmd.x << endl;
+			break;
+		case CMD_GRABITEM_X_Y:
+			if ( inputdebug ) cout << "inputdebug :: command CMD_GRABITEM_X_Y received " <<  cmd.x << " " << cmd.y  << endl;
+			break;
+		case CMD_QUIT:
+			if ( inputdebug ) cout << "inputdebug :: command CMD_QUIT  received\n";
+			break;
+		default:
+			cout << "Error:: Unknown command received from the client \n";
+	}
 }
 
 void startServer(struct sockaddr_in addr){
@@ -146,7 +197,8 @@ void serve_connection(sockaddr_in client , int sock_fd)
 			}
 		}
 
-
+		// make the ipc socket nonblocking 
+		fd_set_blocking(sock_fd, 0 ) ; 
 		Player p(available_pid, sock_fd, client,  h);
 		players[available_pid] = p;
 		connections_served += 1; 
@@ -168,100 +220,121 @@ void serve_connection(sockaddr_in client , int sock_fd)
 void * bcast_sender(void *T){
 
 	header h, reply ; 
-	health_t heal; 
 	int count  =0 ; 
 	while(1){
 
 		//usleep(1000000);
 		sleep(1);
 		count ++ ; 
-		if ( debug ) cout << "Broadcast iteration************************************* :: " << count << endl; 
+		if ( bcastdebug ) cout << "Broadcast iteration************************************* :: " << count << endl; 
 		for(int i =0 ; i < 4 ; i ++ ) {
 			// send terrain 
 			reply.type = BCAST_TERRAIN;
 			send(players[i].bcast_sock, &reply, sizeof(reply), NULL);
 			recv(players[i].bcast_sock, &h, sizeof(h), NULL);
 			if( h.type == OK){
-				if ( debug ) cout << "debug ::reply for BCAST TERRAIN received : ok \n"; 
+				if ( bcastdebug ) cout << "bcastdebug ::reply for BCAST TERRAIN received : ok \n"; 
 			}
 			else 
 				cout << "Unknown reply for BCAST terrain from client of player : " << i  << endl ; 
 			send(players[i].bcast_sock, m.terrain, 75 * 75, NULL);
 			recv(players[i].bcast_sock, &h, sizeof(h), NULL);
 			if( h.type == OK){
-				if ( debug ) cout << "debug ::terrain sent received : ok \n"; 
+				if ( bcastdebug ) cout << "bcastdebug ::terrain sent received : ok \n"; 
 			}
 			else 
 				cout << "Unknown reply for terrain data  from client of player : " << i  << endl ; 
 			// send health of  all players 
-			if ( debug ) cout << "debug :: sending health of all players \n";
+			if ( bcastdebug ) cout << "bcastdebug :: sending data of all players \n";
 			for( int j =0 ; j < 4 ; j++){
 
-				if ( debug ) cout << "debug :: sending health of player " << j << " *********\n" ;
-				heal.id = j;
-				heal.value = players[j].hero.health;  
-				reply.type = BCAST_HEALTH;
+				if ( bcastdebug ) cout << "bcastdebug :: sending data of player " << j << " *********\n" ;
+				player_data_t pdata; // id health nitro hid team  
+				pdata.id = j;
+				pdata.health = players[j].hero.health;  
+				pdata.nitro = players[j].hero.nitro.value;
+				pdata.hid = players[j].hero.hid; 
+				if ( bcastdebug ) cout << "pdata.id : " << pdata.id; 
+				if ( bcastdebug ) cout << " pdata.health: " << pdata.health; 
+				if ( bcastdebug ) cout << " pdata.nitro : " << pdata.nitro; 
+				if ( bcastdebug ) cout << " pdata.hid : " << pdata.hid; 
+				if ( bcastdebug ) cout << " pdata.team : " << pdata.team << endl; 
+				if ( team_a[0] == j || team_a[1] == j){
+					pdata.team = TEAM_A;
+				}else
+				{
+					pdata.team = TEAM_B;
+				}
+
+				reply.type = BCAST_PLAYER_DATA;
 				send(players[i].bcast_sock, &reply, sizeof(reply), NULL);
 				recv(players[i].bcast_sock, &h, sizeof(h), NULL);
 				if( h.type == OK){
-					if ( debug ) cout << "debug ::reply for BCAST Health received : ok \n"; 
+					if ( bcastdebug ) cout << "bcastdebug ::reply for BCAST player data received\n"; 
 				}
 				else 
 					cout << "Unknown reply for BCAST health from client of player : " << i  << endl ; 
-				send(players[i].bcast_sock, &heal, sizeof(heal) , NULL);
+				send(players[i].bcast_sock, &pdata, sizeof(pdata) , NULL);
 				recv(players[i].bcast_sock, &h, sizeof(h), NULL);
 				if( h.type == OK){
-					if ( debug ) cout << "debug :: health sent received : ok \n"; 
+					if ( bcastdebug ) cout << "bcastdebug :: player data sent received : ok \n"; 
 				}
 				else 
-					cout << "Unknown reply for health_t from client of player : " << i  << endl ; 
+					cout << "Unknown reply for player data from client of player : " << i  << endl ; 
 			}
 
 
-			// send health of temple a
+			// send data for temple a
 
-			if ( debug ) cout << "debug :: sending health of temple a\n"; 
+			if ( bcastdebug ) cout << "bcastdebug :: sending temple a data \n"; 
+			player_data_t pdata; 
+			pdata.id = TEMPLE_A_ID;
+			pdata.health = m.temple_a.health;
+			pdata.nitro = 0;
+			pdata.hid = -1;
+			pdata.team = TEAM_A;
 
-			heal.id = TEMPLE_A_ID;
-			heal.value = m.temple_a.health; 
-			reply.type = BCAST_HEALTH;
+			reply.type = BCAST_PLAYER_DATA;
 			send(players[i].bcast_sock, &reply, sizeof(reply), NULL);
 			recv(players[i].bcast_sock, &h, sizeof(h), NULL);
 			if( h.type == OK){
-				if ( debug ) cout << "debug ::reply for BCAST temple a Health received : ok \n"; 
+				if ( bcastdebug ) cout << "bcastdebug ::reply for BCAST temple a data received : ok \n"; 
 			}
 			else 
-				cout << "Unknown reply for BCAST temple a  health from client of player : " << i  << endl ; 
-			send(players[i].bcast_sock, &heal, sizeof(heal) , NULL);
+				cout << "Unknown reply for BCAST temple a data from client of player : " << i  << endl ; 
+			send(players[i].bcast_sock, &pdata, sizeof(pdata) , NULL);
 			recv(players[i].bcast_sock, &h, sizeof(h), NULL);
 			if( h.type == OK){
-				if ( debug ) cout << "debug :: temple a health sent received : ok \n"; 
+				if ( bcastdebug ) cout << "bcastdebug :: temple a data sent received : ok \n"; 
 			}
 			else 
-				cout << "Unknown reply for health_t from client of player : " << i  << endl ; 
+				cout << "Unknown reply for temple data from client of player : " << i  << endl ; 
 
 
-			if ( debug ) cout << "debug :: sending health of temple b\n"; 
+			// send data for temple b
 
-			// send health of temple b 
-			heal.id = TEMPLE_B_ID;
-			heal.value = m.temple_b.health; 
-			reply.type = BCAST_HEALTH;
+			if ( bcastdebug ) cout << "bcastdebug :: sending temple b data \n"; 
+			pdata.id = TEMPLE_B_ID;
+			pdata.health = m.temple_b.health;
+			pdata.nitro = 0;
+			pdata.hid = -1;
+			pdata.team = TEAM_B;
+
+			reply.type = BCAST_PLAYER_DATA;
 			send(players[i].bcast_sock, &reply, sizeof(reply), NULL);
 			recv(players[i].bcast_sock, &h, sizeof(h), NULL);
 			if( h.type == OK){
-				if ( debug ) cout << "debug ::reply for BCAST temple b Health received : ok \n"; 
+				if ( bcastdebug ) cout << "bcastdebug ::reply for BCAST temple b data received : ok \n"; 
 			}
 			else 
-				cout << "Unknown reply for BCAST temple b  health from client of player : " << i  << endl ; 
-			send(players[i].bcast_sock, &heal, sizeof(heal) , NULL);
+				cout << "Unknown reply for BCAST temple b data from client of player : " << i  << endl ; 
+			send(players[i].bcast_sock, &pdata, sizeof(pdata) , NULL);
 			recv(players[i].bcast_sock, &h, sizeof(h), NULL);
 			if( h.type == OK){
-				if ( debug ) cout << "debug :: temple b health sent received : ok \n"; 
+				if ( bcastdebug ) cout << "bcastdebug :: temple b data sent received : ok \n"; 
 			}
 			else 
-				cout << "Unknown reply for health_t from client of player : " << i  << endl ; 
-
+				cout << "Unknown reply for temple data from client of player : " << i  << endl ; 
 
 		}
 	}
@@ -274,8 +347,9 @@ int main(int argc, char *argv[]){
 	port =8181;
 	max_players=4;
 
-	cout << "Starting the game server\n"; 
-
+	if ( debug ) cout << "Starting the game server\n"; 
+	cmd_t cmd; 
+	header reply;
 
 	startServer(addr);
 	// start bcast sender thread 
@@ -283,8 +357,14 @@ int main(int argc, char *argv[]){
 	pthread_create ( &tid, NULL, bcast_sender, NULL);
 	// start the input receiver 
 	while(1){
-		if ( debug ) cout << "debug :: main waiting \n";
-		//usleep(1000000);
+		if ( debug ) cout << "debug :: main waiting  for inputs \n";
+		// check round robin 
+		for ( int i = 0 ; i < 4 ; i ++ ) {
+			int ipc = players[i].input_fd;
+			read_and_display_command(ipc);
+		}
+		// all game code here 
+
 		sleep(1);
 	}
 }
