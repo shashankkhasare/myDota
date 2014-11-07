@@ -38,7 +38,6 @@ class Entity{
 	}
 
 	SDL_Surface * getSurface(){
-		canvas = SDL_DisplayFormat(SDL_LoadBMP(image)); 
 		int green=(int)( 0xff * health )/ 100.0 ;
 		int red = 0xff - green; 
 		Uint32 color = SDL_MapRGB(screen -> format, red ,  green, 0);
@@ -60,6 +59,7 @@ class Entity{
 	Entity(char *img){
 		image = img; 
 	}
+	Entity(){}
 
 
 	Entity(char *img, int x, int y, int w, int h){
@@ -77,6 +77,13 @@ class Entity{
 		fill_health.h = 2; 
 
 		fill_nitro.h = 2; 
+	}
+	void load_image(){
+		canvas = SDL_DisplayFormat(SDL_LoadBMP(image)); 
+	}
+
+	void setImage(char * i) {
+		image = i  ;
 	}
 
 	void setBGScreen(SDL_Surface * scr)
