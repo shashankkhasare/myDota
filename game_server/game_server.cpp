@@ -22,7 +22,7 @@
 #include<fcntl.h>
 
 #define inputdebug 1
-#define bcastdebug 1
+#define bcastdebug 0
 #define debug 1
 using namespace std; 
 
@@ -357,7 +357,6 @@ int main(int argc, char *argv[]){
 	pthread_create ( &tid, NULL, bcast_sender, NULL);
 	// start the input receiver 
 	while(1){
-		if ( debug ) cout << "debug :: main waiting  for inputs \n";
 		// check round robin 
 		for ( int i = 0 ; i < 4 ; i ++ ) {
 			int ipc = players[i].input_fd;
@@ -365,6 +364,6 @@ int main(int argc, char *argv[]){
 		}
 		// all game code here 
 
-		sleep(1);
+		usleep(30000);
 	}
 }

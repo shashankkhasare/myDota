@@ -8,11 +8,19 @@
 #include "../Entity.h"
 #include<stdlib.h>
 #include<unistd.h>
+#include<vector>
 
+#define TEAM_A_NAME "MinioN-Dota Team-A"
+#define TEAM_B_NAME "MinioN-Dota Team-B"
+
+#define TA_X 	22
+#define TA_Y 	21
+#define TB_X 	46
+#define TB_Y 	45
 
 #define debug 		1
 #define debugcommand 	1
-#define debugbcast 		1
+#define debugbcast 		0
 
 #define P0CHAR 		'P'
 #define P1CHAR 		'Q'
@@ -47,6 +55,7 @@ int gamestate = STATE_BEFORE_START;
 
 bool setMouseTarget = false; 
 int mouse_x  =0 , mouse_y=0; 
+vector<Entity*> enemies;
 
 int state = STATE_BEFORE_START; 
 
@@ -62,6 +71,25 @@ void print_terrain()
 	}
 }
 
+
+bool point_not_invisible(int x , int y ){
+
+	int selfteam = playerdata[pid].team;
+	if ( selfteam == TEAM_A){
+		if ( x - y > 12 ) 
+			return false;
+		else 
+			return true;
+
+	}else
+	{
+		if ( y - x > 12)
+			return false;
+		else 
+			return true;
+
+	}
+}
 void update_entities(Entity *p0_e, Entity *p1_e,Entity *p2_e,Entity *p3_e, Entity * ta_e, Entity * tb_e){
 
 	p0_e->setHealth(playerdata[0].health);
@@ -76,6 +104,52 @@ void update_entities(Entity *p0_e, Entity *p1_e,Entity *p2_e,Entity *p3_e, Entit
 
 	ta_e->setHealth(temple_a_data.health  / 20 );
 	tb_e->setHealth(temple_b_data.health  / 20 );
+
+}
+void identify_enemies(Entity *p0_e, Entity *p1_e,Entity *p2_e,Entity *p3_e, Entity * ta_e, Entity * tb_e){
+	int selfteam; 
+	selfteam = playerdata[pid].team ; 
+	if ( playerdata[0].team != selfteam){
+		enemies.push_back(p0_e);
+	}
+	if ( playerdata[1].team != selfteam){
+		enemies.push_back(p1_e);
+	}
+	if ( playerdata[2].team != selfteam){
+		enemies.push_back(p2_e);
+	}
+	if ( playerdata[3].team != selfteam){
+		enemies.push_back(p3_e);
+	}
+	if ( temple_a_data.team != selfteam){
+		enemies.push_back(ta_e);
+	}
+	if ( temple_b_data.team != selfteam){
+		enemies.push_back(tb_e);
+	}
+	if ( debug ) cout << "Enemies identified and saved in the enemies list \n";
+	if ( debug ) cout << "Their locations are :  \n";
+	if ( enemies.size() != 3)
+		cout << "Error:: Enemy count mismatch!!! Found " << enemies.size() << " enemies \n";
+	else{
+		cout << (enemies[0] -> getRectAddr()) -> x << (enemies[0] -> getRectAddr())->y << endl;
+		cout << (enemies[1] -> getRectAddr())->x << (enemies[0] -> getRectAddr())->y << endl;
+		cout << (enemies[2] -> getRectAddr())->x << (enemies[0] -> getRectAddr())->y << endl;
+	}
+}
+void send_attack_pid_command(int p){
+	cmd_t cmd; 
+	header head;
+	cmd.command = CMD_ATTACK_PID;
+	cmd.pid = p; 
+	if ( debugcommand) cout << "debugcommand:: sending the command to server CMD_ATTACK_PID \n";
+	send(ipc_sock, &cmd, sizeof(cmd), 0);
+	recv(ipc_sock, &head, sizeof(head), 0 ) ; 
+	if ( head.type == OK ) 
+	{
+		if ( debugcommand) cout << "debugcommand:: send the command and received ok from server \n";
+	}else 
+		cout << "Error :: unknown reply from server for the CMD_ATTACK_PID command \n";
 
 }
 void send_useitem_x_command(int item ) 
@@ -136,7 +210,7 @@ void send_hid_and_settle_team(int sock)
 	intdata d; 
 
 	SDL_Surface *screen;
-	screen = SDL_SetVideoMode(750 , 750 ,32,SDL_SWSURFACE);
+	screen = SDL_SetVideoMode(750 , 750 ,32 , SDL_SWSURFACE);
 
 
 
@@ -492,27 +566,27 @@ void Client::start(){
 		item[i].setDim(20, 20) ; 
 		item[i].deleteWhite(screen);
 	}
-/*	
-	Entity p00_e(M1_IMAGE, 170 , 190 , 20, 20) ; 
-	Entity p01_e(M2_IMAGE, 170 , 190 , 20, 20) ; 
-	Entity p02_e(M3_IMAGE, 170 , 190 , 20, 20) ; 
-	Entity p03_e(M4_IMAGE, 170 , 190 , 20, 20) ; 
+	/*	
+		Entity p00_e(M1_IMAGE, 170 , 190 , 20, 20) ; 
+		Entity p01_e(M2_IMAGE, 170 , 190 , 20, 20) ; 
+		Entity p02_e(M3_IMAGE, 170 , 190 , 20, 20) ; 
+		Entity p03_e(M4_IMAGE, 170 , 190 , 20, 20) ; 
 
-	Entity p10_e(M1_IMAGE, 170 , 190 , 20, 20) ; 
-	Entity p11_e(M2_IMAGE, 170 , 190 , 20, 20) ; 
-	Entity p12_e(M3_IMAGE, 170 , 190 , 20, 20) ; 
-	Entity p13_e(M4_IMAGE, 170 , 190 , 20, 20) ; 
+		Entity p10_e(M1_IMAGE, 170 , 190 , 20, 20) ; 
+		Entity p11_e(M2_IMAGE, 170 , 190 , 20, 20) ; 
+		Entity p12_e(M3_IMAGE, 170 , 190 , 20, 20) ; 
+		Entity p13_e(M4_IMAGE, 170 , 190 , 20, 20) ; 
 
-	Entity p20_e(M1_IMAGE, 170 , 190 , 20, 20) ; 
-	Entity p21_e(M2_IMAGE, 170 , 190 , 20, 20) ; 
-	Entity p22_e(M3_IMAGE, 170 , 190 , 20, 20) ; 
-	Entity p23_e(M4_IMAGE, 170 , 190 , 20, 20) ; 
+		Entity p20_e(M1_IMAGE, 170 , 190 , 20, 20) ; 
+		Entity p21_e(M2_IMAGE, 170 , 190 , 20, 20) ; 
+		Entity p22_e(M3_IMAGE, 170 , 190 , 20, 20) ; 
+		Entity p23_e(M4_IMAGE, 170 , 190 , 20, 20) ; 
 
-	Entity p30_e(M1_IMAGE, 170 , 190 , 20, 20) ; 
-	Entity p31_e(M2_IMAGE, 170 , 190 , 20, 20) ; 
-	Entity p32_e(M3_IMAGE, 170 , 190 , 20, 20) ; 
-	Entity p33_e(M4_IMAGE, 170 , 190 , 20, 20) ; 
-*/
+		Entity p30_e(M1_IMAGE, 170 , 190 , 20, 20) ; 
+		Entity p31_e(M2_IMAGE, 170 , 190 , 20, 20) ; 
+		Entity p32_e(M3_IMAGE, 170 , 190 , 20, 20) ; 
+		Entity p33_e(M4_IMAGE, 170 , 190 , 20, 20) ; 
+		*/
 	//Entity p0_e, p1_e, p2_e, p3_e;
 
 	Entity p0_e(NULL, 170 , 190 , 20, 20) ; 
@@ -520,8 +594,8 @@ void Client::start(){
 	Entity p2_e(NULL, 170 , 190 , 20, 20) ; 
 	Entity p3_e(NULL, 170 , 190 , 20, 20) ; 
 	/*
-	while(playerdata[0].team + playerdata[1].team + playerdata[2].team + playerdata[3].team < 2 ) usleep(50000);*/
-	
+	   while(playerdata[0].team + playerdata[1].team + playerdata[2].team + playerdata[3].team < 2 ) usleep(50000);*/
+
 	// fix for captain america bug 
 	SDL_Surface * loading ; 
 	loading = SDL_DisplayFormat(SDL_LoadBMP("images/loading.bmp"));
@@ -529,6 +603,7 @@ void Client::start(){
 	SDL_Flip(screen);
 	sleep(5);
 	SDL_FreeSurface(loading);
+
 	switch(playerdata[0].hid){
 		case 0: 
 			p0_e.setImage(M1_IMAGE);
@@ -617,12 +692,12 @@ void Client::start(){
 	p3_e.load_image();
 
 	//Temples
-	Entity ta_e("images/temple1.bmp",22 * 10 , 21 * 10 , 90, 95);
+	Entity ta_e("images/temple1.bmp", TA_X * 10 , TA_Y * 10 , 90, 95);
 	ta_e.setHealth(100);
 	ta_e.setNitro(0);
 	ta_e.setBGScreen(screen);
 
-	Entity tb_e("images/temple2.bmp",46 * 10 , 45 * 10 , 90, 95);
+	Entity tb_e("images/temple2.bmp",TB_X * 10 , TB_Y  * 10 , 90, 95);
 	tb_e.setHealth(100);
 	tb_e.setNitro(0);
 	tb_e.setBGScreen(screen);
@@ -630,7 +705,14 @@ void Client::start(){
 	ta_e.load_image();
 	tb_e.load_image();
 
+	// identify the enemies on the map
+	identify_enemies(&p0_e, &p1_e, &p2_e, &p3_e, &ta_e, &tb_e);
 	Widget target("images/target.bmp" , NULL, 0 , 0 , 20 , 20  ) ; 
+	if ( playerdata[pid].team == TEAM_A){
+		SDL_WM_SetCaption(TEAM_A_NAME, NULL);
+	}else{
+		SDL_WM_SetCaption(TEAM_B_NAME, NULL);
+	}
 
 	int running = 1;
 	while(running){
@@ -734,40 +816,57 @@ void Client::start(){
 
 				case SDL_MOUSEBUTTONDOWN: 
 					if ( e.button.button == SDL_BUTTON_LEFT){
-						// attack command 
-						if ( p0_e.isInRange(e.button.x, e.button.y ) || 	
-								p1_e.isInRange(e.button.x, e.button.y ) || 	
-								p2_e.isInRange(e.button.x, e.button.y ) || 	
-								p3_e.isInRange(e.button.x, e.button.y ) || 	
-								ta_e.isInRange(e.button.x, e.button.y ) || 	
-								tb_e.isInRange(e.button.x, e.button.y )){
-							cmd.command = CMD_ATTACK_PID;
-							cmd.pid = 5; 
-							if ( debugcommand) cout << "debugcommand:: sending the command to server CMD_ATTACK_PID \n";
-							send(ipc_sock, &cmd, sizeof(cmd), 0);
-							recv(ipc_sock, &head, sizeof(head), 0 ) ; 
-							if ( head.type == OK ) 
-							{
-								if ( debugcommand) cout << "debugcommand:: send the command and received ok from server \n";
-							}else 
-								cout << "Error :: unknown reply from server for the CMD_ATTACK_PID command \n";
 
+						int gridx, gridy; 
+						gridx = gridy = -1; 
+						for ( int i = 0 ; i < 3; i++){
+							if(enemies[i] -> isInRange(e.button.x, e.button.y )){
+								gridx = enemies[i] -> getRectAddr() -> x;
+								gridy = enemies[i] -> getRectAddr() -> y;
+							}
 						}
+						if ( gridx != -1 && gridy != -1 ) {
+
+							if ( gridx == TA_X && gridy == TA_Y)
+							{
+								if ( debugcommand) cout << "debug :: Before calling send_attack_pid_command temple a \n";
+								send_attack_pid_command(TEMPLE_A_ID);
+							}else if ( gridx == TB_X && gridy == TB_Y){
+								if ( debugcommand) cout << "debug :: Before calling send_attack_pid_command temple b \n";
+								send_attack_pid_command(TEMPLE_B_ID);
+							}else if ( terrain[gridx][gridy] == P0CHAR){
+								if ( debugcommand) cout << "debug :: Before calling send_attack_pid_command. p0\n";
+								send_attack_pid_command(0);
+							}else if ( terrain[gridx][gridy] == P1CHAR){
+								if ( debugcommand) cout << "debug :: Before calling send_attack_pid_command. p1\n";
+								send_attack_pid_command(1);
+							}else if ( terrain[gridx][gridy] == P2CHAR){
+								if ( debugcommand) cout << "debug :: Before calling send_attack_pid_command p2\n";
+								send_attack_pid_command(2);
+							}else if ( terrain[gridx][gridy] == P3CHAR){
+								if ( debugcommand) cout << "debug :: Before calling send_attack_pid_command p3\n";
+								send_attack_pid_command(3);
+							}
+						}
+
+
 						// check if item grab attempted
 
 
-						int gridx = (int) (e.button.x / 10.);
-						int gridy = (int) (e.button.y / 10.);
+						gridx = (int) (e.button.x / 10.);
+						gridy = (int) (e.button.y / 10.);
 						if (terrain[gridx][gridy] <= '7' && terrain[gridx][gridy] >= '1'){
 							send_grab_item_x_y_command(gridx, gridy);
 						}
 					}else
 					{
+						// GOTO_X_Y  command 
 
 						int gridx, gridy; 
 						gridx = (int) (e.button.x / 10.);
 						gridy = (int) (e.button.y / 10.);
-						if( terrain[gridx][gridy] == '.' || terrain[gridx][gridy] == 'w'){
+						if( (terrain[gridy][gridx] == '.' || terrain[gridy][gridx] == 'w' ) 
+								&& point_not_invisible(gridx, gridy)){
 							if ( debugcommand) cout << "Coordinates " << e.button.x << " " << e.button.y << endl; 
 							if ( debugcommand) cout << "Grid points " << gridx << " " << gridy << endl; 
 							send_goto_x_y_command(gridx, gridy);
@@ -777,21 +876,19 @@ void Client::start(){
 
 					break;
 				case SDL_MOUSEMOTION:
-					if ( p0_e.isInRange(e.button.x, e.button.y ) || 	
-							p1_e.isInRange(e.button.x, e.button.y ) || 	
-							p2_e.isInRange(e.button.x, e.button.y ) || 	
-							p3_e.isInRange(e.button.x, e.button.y ) || 	
-							ta_e.isInRange(e.button.x, e.button.y ) || 	
-							tb_e.isInRange(e.button.x, e.button.y )){
-						mouse_x = e.button.x; 
-						mouse_y = e.button.y ; 
-						setMouseTarget = true;
-					}else
+					// set cursor to attack mode if entity under cursor is enemy
+					mouse_x = e.button.x; 
+					mouse_y = e.button.y ; 
+					bool previous = setMouseTarget; 
+					if(enemies[0] -> isInRange(e.button.x, e.button.y ) || 
+							enemies[1] -> isInRange(e.button.x, e.button.y ) || 
+							enemies[2] -> isInRange(e.button.x, e.button.y ))
 					{
+						setMouseTarget = true;
+					}else{
 						setMouseTarget = false;
 					}
-
-
+					break;
 			}
 		}
 		SDL_Flip(screen);
