@@ -9,6 +9,7 @@
 #include<stdlib.h>
 #include<unistd.h>
 #include<vector>
+#include<map>
 
 #define TEAM_A_NAME "MinioN-Dota Team-A"
 #define TEAM_B_NAME "MinioN-Dota Team-B"
@@ -21,6 +22,9 @@
 #define debug 		1
 #define debugcommand 	1
 #define debugbcast 		0
+
+#define MAGIC 2 
+#define MELEE 1
 
 #define P0CHAR 		'P'
 #define P1CHAR 		'Q'
@@ -54,8 +58,12 @@ int gamemode ;
 int gamestate = STATE_BEFORE_START; 
 
 bool setMouseTarget = false; 
+bool setMouseGrab = false; 
+bool isMdown = false; 
 int mouse_x  =0 , mouse_y=0; 
 vector<Entity*> enemies;
+
+//map<int , map<int, Widget* > > itemmap;
 
 int state = STATE_BEFORE_START; 
 
@@ -90,6 +98,62 @@ bool point_not_invisible(int x , int y ){
 
 	}
 }
+/*
+void create_map(){
+
+	for(int i = 0; i < 75; i ++) {
+		for ( int j = 0 ; j < 75 ; j++)
+		{
+			if ( '1' <= terrain[i][j]  && terrain[i][j] <= '7'){
+
+				switch(terrain[i][j]){
+					case '1':
+						itemmap[i][j] = new Widget("images/items/nike.bmp", NULL);
+						break;
+					case '2':
+						itemmap[i][j] = new	Widget("images/items/supernike.bmp", NULL);
+						break;
+					case '3':
+						itemmap[i][j] = new	Widget("images/items/hammer.bmp", NULL);
+						break;
+					case '4':
+						itemmap[i][j] = new	Widget("images/items/superhammer.bmp", NULL);
+						break;
+					case '5':
+						itemmap[i][j] = new	Widget("images/items/banana.bmp", NULL);
+						break;
+					case '6':
+						itemmap[i][j] = new	Widget("images/items/redhot.bmp", NULL);
+						break;
+					case '7':
+						itemmap[i][j] = new	Widget("images/items/toolbox.bmp", NULL);
+						break;
+					default : 
+						break;
+				}
+				cout << "Item found at " << i << " " << j << endl; 
+				itemmap[i][j] -> setLocation(10 * j , 10 * i ) ; 
+				itemmap[i][j] -> setDim(20, 20);
+			}
+		}
+	}
+}
+void update_itemmap(){
+
+	for ( int i =0 ;i < 75 ; i ++ ) 
+	{
+		if ( itemmap.find(i) != itemmap.end()){
+			for( int j = 0 ; j < 75 ; j++){
+				if(itemmap[i].find(j) != itemmap[i].end())
+				{
+					if ( !('1' <= terrain[i][j] && terrain[i][j] <= '7'))
+						delete itemmap[i][j];
+				}
+			}
+		}
+	}
+}
+*/
 void update_entities(Entity *p0_e, Entity *p1_e,Entity *p2_e,Entity *p3_e, Entity * ta_e, Entity * tb_e){
 
 	p0_e->setHealth(playerdata[0].health);
@@ -141,6 +205,14 @@ void send_attack_pid_command(int p){
 	cmd_t cmd; 
 	header head;
 	cmd.command = CMD_ATTACK_PID;
+	if ( isMdown){
+		cmd.attack_mode = MAGIC;
+		if ( debugcommand ) cout << "Magic attack \n";
+	}
+	else{
+		cmd.attack_mode = MELEE;
+		if ( debugcommand ) cout << "melee attack \n";
+	}
 	cmd.pid = p; 
 	if ( debugcommand) cout << "debugcommand:: sending the command to server CMD_ATTACK_PID \n";
 	send(ipc_sock, &cmd, sizeof(cmd), 0);
@@ -460,7 +532,7 @@ void *  bcast_receiver(void *This){
 					cout << "Error :: recv returned -1 \n";
 
 				}
-				cout << "Terrain received : " << actual << " / " << expected  << endl; 
+				if ( debugbcast) cout << "Terrain received : " << actual << " / " << expected  << endl; 
 			}
 			reply.type = OK;
 			send(bcast_sock, &reply, sizeof(reply), 0); 
@@ -561,11 +633,13 @@ void Client::start(){
 		Widget("images/items/superhammer.bmp", NULL),
 		Widget("images/items/banana.bmp", NULL),
 		Widget("images/items/redhot.bmp", NULL),
-		Widget("images/items/toolbox.bmp", NULL)};
+		Widget("images/items/toolbox.bmp", NULL)
+	};
 	for(int i=0;i<7;i++){
 		item[i].setDim(20, 20) ; 
 		item[i].deleteWhite(screen);
 	}
+	
 	/*	
 		Entity p00_e(M1_IMAGE, 170 , 190 , 20, 20) ; 
 		Entity p01_e(M2_IMAGE, 170 , 190 , 20, 20) ; 
@@ -596,13 +670,20 @@ void Client::start(){
 	/*
 	   while(playerdata[0].team + playerdata[1].team + playerdata[2].team + playerdata[3].team < 2 ) usleep(50000);*/
 
-	// fix for captain america bug 
 	SDL_Surface * loading ; 
 	loading = SDL_DisplayFormat(SDL_LoadBMP("images/loading.bmp"));
 	SDL_BlitSurface(loading, NULL, screen,NULL);
 	SDL_Flip(screen);
-	sleep(5);
+
+	// wait till the first bcast 
+	// fix for captain america bug 
+	while( playerdata[0].health == 0&& playerdata[1].health== 0  && playerdata[2].health == 0 && playerdata[3].health == 0){
+		cout << "Health is " << playerdata[0].health + playerdata[1].health + playerdata[2].health + playerdata[3].health << endl;
+		sleep(2);
+	}
 	SDL_FreeSurface(loading);
+
+	//create_map();
 
 	switch(playerdata[0].hid){
 		case 0: 
@@ -708,6 +789,7 @@ void Client::start(){
 	// identify the enemies on the map
 	identify_enemies(&p0_e, &p1_e, &p2_e, &p3_e, &ta_e, &tb_e);
 	Widget target("images/target.bmp" , NULL, 0 , 0 , 20 , 20  ) ; 
+	Widget grab("images/grab.bmp" , NULL, 0 , 0 , 30 , 19  ) ; 
 	if ( playerdata[pid].team == TEAM_A){
 		SDL_WM_SetCaption(TEAM_A_NAME, NULL);
 	}else{
@@ -722,16 +804,18 @@ void Client::start(){
 		//Background Grass	
 		SDL_BlitSurface(fw.getSurface(), NULL, screen, fw.getRectAddr());
 		update_entities(&p0_e, &p1_e, &p2_e, &p3_e, &ta_e, &tb_e);
+		//update_itemmap();
 
 		// Blit the terrain and the players 
 		for(int i=0;i<75;i++){
 			for(int j=0;j<75;j++){
 				// items 
 				if(terrain[i][j] >= '1' && terrain[i][j] <= '7'){
-					item[terrain[i][j] -'1'].setLocation(10 * j, 10 * i); 
+					item[terrain[i][j] -'1'].setLocation(10 * j, 10 * i);
 					SDL_BlitSurface(item[terrain[i][j] - '1'].getSurface(),
-							NULL, screen,
-							item[terrain[i][j] - '1'].getRectAddr() );
+					NULL, screen,
+					item[terrain[i][j] - '1'].getRectAddr() );
+
 				}else if(terrain[i][j] == 'J'){ // Jungle 
 					tw.setLocation(10*j, 10*i);
 					SDL_BlitSurface(tw.getSurface(), NULL, screen, tw.getRectAddr());
@@ -762,7 +846,12 @@ void Client::start(){
 			target.deleteWhite(screen);
 			SDL_BlitSurface(target.getSurface(), NULL, screen, target.getRectAddr());
 
-		}else{
+		}else if (setMouseGrab) {
+			SDL_ShowCursor(0);
+			grab.setLocation(mouse_x -10, mouse_y -10);
+			grab.deleteWhite(screen);
+			SDL_BlitSurface(grab.getSurface(), NULL, screen, grab.getRectAddr());
+		}else {
 
 			SDL_ShowCursor(1);
 		}
@@ -809,8 +898,18 @@ void Client::start(){
 						case SDLK_7:
 							send_useitem_x_command(7);
 							break;
+						case SDLK_m:
+							isMdown = true;
+							cout << "M is down " << endl;
+							break;
 						default:
 							break;
+					}
+					break;
+				case SDL_KEYUP:
+					if ( e.key.keysym.sym == SDLK_m){
+						isMdown = false;
+						cout << "M is up " << endl;
 					}
 					break;
 
@@ -821,10 +920,11 @@ void Client::start(){
 						gridx = gridy = -1; 
 						for ( int i = 0 ; i < 3; i++){
 							if(enemies[i] -> isInRange(e.button.x, e.button.y )){
-								gridx = enemies[i] -> getRectAddr() -> x;
-								gridy = enemies[i] -> getRectAddr() -> y;
+								gridx = (enemies[i] -> getRectAddr() -> x) / 10.;
+								gridy = (enemies[i] -> getRectAddr() -> y) / 10.;
 							}
 						}
+						if ( debugcommand ) cout << "Enemy found at gridx, gridy " << gridx << " "  << gridy << endl; 
 						if ( gridx != -1 && gridy != -1 ) {
 
 							if ( gridx == TA_X && gridy == TA_Y)
@@ -834,16 +934,16 @@ void Client::start(){
 							}else if ( gridx == TB_X && gridy == TB_Y){
 								if ( debugcommand) cout << "debug :: Before calling send_attack_pid_command temple b \n";
 								send_attack_pid_command(TEMPLE_B_ID);
-							}else if ( terrain[gridx][gridy] == P0CHAR){
+							}else if ( terrain[gridy][gridx] == P0CHAR){
 								if ( debugcommand) cout << "debug :: Before calling send_attack_pid_command. p0\n";
 								send_attack_pid_command(0);
-							}else if ( terrain[gridx][gridy] == P1CHAR){
+							}else if ( terrain[gridy][gridx] == P1CHAR){
 								if ( debugcommand) cout << "debug :: Before calling send_attack_pid_command. p1\n";
 								send_attack_pid_command(1);
-							}else if ( terrain[gridx][gridy] == P2CHAR){
+							}else if ( terrain[gridy][gridx] == P2CHAR){
 								if ( debugcommand) cout << "debug :: Before calling send_attack_pid_command p2\n";
 								send_attack_pid_command(2);
-							}else if ( terrain[gridx][gridy] == P3CHAR){
+							}else if ( terrain[gridy][gridx] == P3CHAR){
 								if ( debugcommand) cout << "debug :: Before calling send_attack_pid_command p3\n";
 								send_attack_pid_command(3);
 							}
@@ -855,9 +955,22 @@ void Client::start(){
 
 						gridx = (int) (e.button.x / 10.);
 						gridy = (int) (e.button.y / 10.);
-						if (terrain[gridx][gridy] <= '7' && terrain[gridx][gridy] >= '1'){
+						if (terrain[gridy][gridx] <= '7' && terrain[gridy][gridx] >= '1'){
+							if( point_not_invisible(gridx, gridy))
 							send_grab_item_x_y_command(gridx, gridy);
+						}else if (terrain[gridy][gridx - 1] <= '7' && terrain[gridy][gridx - 1] >= '1'){
+							if( point_not_invisible(gridx, gridy))
+							send_grab_item_x_y_command(gridx - 1, gridy);
+						}else if (terrain[gridy -1 ][gridx] <= '7' && terrain[gridy- 1][gridx] >= '1'){
+							if( point_not_invisible(gridx, gridy))
+							send_grab_item_x_y_command(gridx, gridy -1 );
+						}else if (terrain[gridy -1 ][gridx - 1] <= '7' && terrain[gridy- 1][gridx - 1] >= '1'){
+							if( point_not_invisible(gridx, gridy))
+							send_grab_item_x_y_command(gridx -1 , gridy - 1 );
 						}
+
+
+
 					}else
 					{
 						// GOTO_X_Y  command 
@@ -879,7 +992,6 @@ void Client::start(){
 					// set cursor to attack mode if entity under cursor is enemy
 					mouse_x = e.button.x; 
 					mouse_y = e.button.y ; 
-					bool previous = setMouseTarget; 
 					if(enemies[0] -> isInRange(e.button.x, e.button.y ) || 
 							enemies[1] -> isInRange(e.button.x, e.button.y ) || 
 							enemies[2] -> isInRange(e.button.x, e.button.y ))
@@ -887,6 +999,21 @@ void Client::start(){
 						setMouseTarget = true;
 					}else{
 						setMouseTarget = false;
+					}
+
+					// set cursor to grab if the widget under cursor is item
+					int gridx = (int) (e.button.x / 10.);
+					int gridy = (int) (e.button.y / 10.);
+					if (terrain[gridy][gridx] <= '7' && terrain[gridy][gridx] >= '1'){
+						setMouseGrab = true;
+					}else if (terrain[gridy][gridx - 1] <= '7' && terrain[gridy][gridx - 1] >= '1'){
+						setMouseGrab = true;
+					}else if (terrain[gridy -1 ][gridx] <= '7' && terrain[gridy- 1][gridx] >= '1'){
+						setMouseGrab = true;
+					}else if (terrain[gridy -1 ][gridx - 1] <= '7' && terrain[gridy- 1][gridx - 1] >= '1'){
+						setMouseGrab = true;
+					}else{
+						setMouseGrab = false;
 					}
 					break;
 			}
