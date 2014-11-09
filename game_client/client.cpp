@@ -287,26 +287,26 @@ void send_hid_and_settle_team(int sock)
 
 
 
-	Widget menu("images/menu.bmp", NULL);
+	Widget menu("images/wfree750.bmp", NULL);
 	menu.setLocation(0, 0);
 	menu.setDim(750 , 750 );
 
 
 
 
-	Widget h1("images/h1.bmp", "images/h1_hover.bmp", 10, 10, 200, 200);
-	Widget h2("images/h2.bmp", "images/h2_hover.bmp", 250, 10, 200, 200);
-	Widget h3("images/h3.bmp", "images/h3_hover.bmp", 10, 250, 200, 200);
-	Widget h4("images/h4.bmp", "images/h4_hover.bmp", 250, 250, 200, 200);
+	Widget h1("images/h1.bmp", "images/h1_hover.bmp", 125, 125, 200, 200);
+	Widget h2("images/h2.bmp", "images/h2_hover.bmp", 125, 425, 200, 200);
+	Widget h3("images/h3.bmp", "images/h3_hover.bmp", 425, 125, 200, 200);
+	Widget h4("images/h4.bmp", "images/h4_hover.bmp", 425, 425, 200, 200);
 
 
 
-	Widget teama("images/teama.bmp", NULL, 50, 50, 400, 87);
-	Widget teamb("images/teamb.bmp", NULL, 50, 150, 400, 87);
+	Widget teama("images/teama.bmp", "images/teama_hover.bmp", 222,240, 324, 86);
+	Widget teamb("images/teamb.bmp", "images/teamb_hover.bmp", 222,426, 306, 86);
 
-	Widget teama_full("images/full.bmp", NULL, 50, 50, 400, 87);
-	Widget teamb_full("images/full.bmp", NULL, 50, 150, 400, 87);
-	Widget allteamsfull("images/allteamsfull.bmp", NULL, 50, 150, 441, 87);
+	Widget teama_full("images/full.bmp", NULL, 222, 240, 381, 86);
+	Widget teamb_full("images/full.bmp", NULL, 222, 426, 381, 86);
+	Widget allteamsfull("images/allteamsfull.bmp", NULL, 95, 333, 561, 86);
 
 
 
@@ -337,6 +337,8 @@ void send_hid_and_settle_team(int sock)
 					h2.handleHover(e);
 					h3.handleHover(e);
 					h4.handleHover(e);
+					teama.handleHover(e);
+					teamb.handleHover(e);
 					break;
 
 				case SDL_MOUSEBUTTONDOWN: 
