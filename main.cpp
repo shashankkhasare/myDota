@@ -6,6 +6,9 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <ifaddrs.h>
+#include<string.h>
+#include<unistd.h>
+#include<fstream>
 
 using namespace std;
 
@@ -30,19 +33,19 @@ struct sockaddr_in getSelfAddress(){
 }
 void fork_local_server(){
 
-	char command[] = "./gameserver " ; 
+	char command[] = "./gameserver 2>&1 > logs/gameserver.log & " ; 
 	system(command);
 
 }
-void fork_local_client(){
+void fork_local_client(int mode, int no){
 
 	struct sockaddr_in addr;
-	char command[30]  = "./client ";
+	char command[50]  = "./client ";
 	char *ip ;
 	addr = getSelfAddress();
 	ip = inet_ntoa(addr.sin_addr);
-	strcat(command, ip);
-	strcat(command,  " 0");
+	sprintf(command, "./client %s %d 2>&1 > logs/client%d.log &" , ip, mode, no);
+	cout << command << endl;
 	system(command);
 }
 
@@ -114,7 +117,15 @@ int main()
 						if ( !multiplayerChosen && exitButton.isInRange(e.button.x, e.button.y ))
 							running = 0 ; 
 						else if ( !multiplayerChosen && singlePlayerButton.isInRange(e.button.x, e.button.y )){
-							cout << "Single Player Selected  " << endl ; 
+							// fork a server 
+							fork_local_server();
+							// fork a client in human mode
+							// fork         (mode, id)
+							fork_local_client(0 , 1); 
+							// fork 3 clients in AI mode
+							fork_local_client(1 , 2); 
+							fork_local_client(1 , 3); 
+							fork_local_client(1 , 4); 
 						}
 						else if ( !multiplayerChosen && multiPlayerButton.isInRange(e.button.x, e.button.y )){
 							multiplayerChosen = true;
@@ -122,10 +133,24 @@ int main()
 							// fork a server 
 							fork_local_server();
 							// fork client in human mode
-							fork_local_client();
+							sleep(2);
+							fork_local_client(0, 1);
 							running = 0 ; 
 						}else if ( multiplayerChosen && joinremote.isInRange(e.button.x, e.button.y ) ) {
 							system("gnome-terminal --hide-menubar -t \"Minion Dota :: Host IP address required\" -x $PWD/remote_client.sh");
+							// check if the address is supplied 
+							while(true){
+								ifstream f("address"); 
+								if(f.good()){
+									break;
+								}else
+								{
+									f.close();
+									sleep(1);
+								}
+							}
+							system("./client `cat address` 0 >logs/client.log &");
+							system("rm address");
 							running = 0 ; 
 						}else if (multiplayerChosen && back.isInRange(e.button.x , e.button.y )){
 							multiplayerChosen = false;

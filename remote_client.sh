@@ -26,5 +26,8 @@ do
 	echo "Doesn't look like an ip address. Please re enter";
 	read ipa;
 done
+echo "Starting the client "
+#./client $ipa 0 > logs/client0.log &
+#./client $ipa 0 & 2>&1 >logs/client.log
 
-./client $ipa 0
+sleep 1
