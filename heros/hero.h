@@ -79,6 +79,6 @@ class  Hero{
 	void drive();
 	void process_dfa();
 	void spawn(Map *m);
-	void route(Map *m, point dest);
+	void route(Map *m, point dest, int option);
 };
 #endif
