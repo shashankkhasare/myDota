@@ -1,0 +1,44 @@
+/**
+	 * Adds new_item to item_bag of h. Does not add item_new if it exceeds item_bag.bag_capacity.
+	 **/  
+	//void add_to_item_bag(int item_id);
+
+	/**
+	 * Updates h->curr_x_pos, h->curr_y_pos to x,y respectively.
+	 * Retains old values if, new (x,y) tuple is occupied by some non-collectible (i.e. other hero or tree) in MAP, or (x,y) lies outside of MAP. 
+	 * Return -1 on failure of updation, 1 on successful updation.
+	 **/
+	//int update_current_pos(int x, int y);
+
+	/**
+	 * Updates h->dest_x_pos, h->dest_y_pos to x,y respectively. Reads the global State.MAP (TODO: Define state).
+	 **/
+
+	//void update_dest_pos( int x, int y);
+
+	/**
+	 * Updates h->health by integer(+ or -) update. The updated is limited to [0, h->max_health]. 
+	 * Updates h->state to DEAD if new h->health reaches 0.
+	 **/  
+	//int update_health(int update);
+
+	/**
+	 * Updates h->movement_speed by integer(+ or -) update. The updated is limited to [1, 2^(sizeof_int_in_bits()-1)].
+	 **/  
+	//int update_movement_speed( int update);
+
+
+	/**
+	 * Updates h->attack_speed by integer(+ or -) update. The updated is limited to [1, 2^(sizeof_int_in_bits()-1)].
+	 **/  
+	//int update_attack_speed( int update);
+
+	/**
+	 * Returns the current position of h.
+	 **/  
+	//point_t get_curr_pos();
+
+	/**
+	 * Renders the hero on screen.
+	void render_hero(hero *h);
+	 **/
