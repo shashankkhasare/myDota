@@ -1,0 +1,9 @@
+The fields of item file is as follows:
+1) IMAGE_FILE: 		Image that will be displayed on terrain.
+2) MOVEMENT_SPEED: 	Increment in pixel_pos variable of hero.
+3) ATTACK_SPEED: 	Increament in scale factor attack_speed of hero.
+4) HEALTH: 		Increament in health of hero. 
+5) DAMAGE_MELEE: 	Increament in damage_melee variable of hero.
+6) DAMAGE_MAGIC: 	Increament in damage associated with mpowerid variable of hero.
+7) TEMPLE_HEAL: 	Increament in health of temple being defended by hero.
+8) REQUIRED_SPACE: 	Space consumed by item in item_bag of hero.	
