@@ -24,6 +24,7 @@
 #define inputdebug 1
 #define bcastdebug 0
 #define debug 1
+#define debugengine 1
 using namespace std; 
 
 requests message [7];
@@ -243,7 +244,7 @@ void * bcast_sender(void *T){
 	while(1){
 
 		//usleep(1000000);
-		sleep(1);
+		//sleep(1);
 		count ++ ; 
 		if ( bcastdebug ) cout << "Broadcast iteration************************************* :: " << count << endl; 
 		for(int i =0 ; i < 4 ; i ++ ) {
@@ -377,6 +378,7 @@ int main(int argc, char *argv[]){
 	// start the input receiver 
 	while(1){
 		// check round robin 
+		//sleep(1);
 		for ( int i = 0 ; i < 4 ; i ++ ) {
 			int ipc = players[i].input_fd;
 			cmd = read_and_display_command(ipc);
@@ -386,15 +388,20 @@ int main(int argc, char *argv[]){
 			// Pre-op
 			// 1.1 Allocate the spell if required.
 			if(players[i].hero.state == MOVING_TO_ATTACK_TEMPLE || players[i].hero.state == MOVING_TO_ATTACK_HERO){
+				if (debugengine) cout << "Moving to attack \n";
+
 				if(players[i].hero.attack_mode == MAGIC && !players[i].hero.mpower.is_Disabled){
+					if (debugengine) cout << "Magic mode attack available\n";
 					int range = players[i].hero.mpower.range;
 					int currIndex = players[i].hero.curr_path_index;
 					int destIndex = players[i].hero.path.last_path_index;
 					int n = players[i].hero.mpower.nitro;
 					int j;
 					char tmp;
-					if(n)
+					if(n){
+						if (debugengine) cout << "Nitro is available\n";
 						if(range >= destIndex - currIndex){
+							if (debugengine) cout << "Target in range\n";
 							point src, dest;
 							src = players[i].hero.curr_pos;
 							dest = players[i].hero.dest_pos;
@@ -403,6 +410,7 @@ int main(int argc, char *argv[]){
 							m.terrain[dest.y][dest.x] = '.';
 							path_t p = m.is_line_of_sight_clear(src, dest);
 							if(p.last_path_index != -1){
+								if (debugengine) cout << "Line of sight clear \n";
 								for(j = 0; j<CAPACITY_PER_SPELL; j++)
 									if(players[i].hero.mpower.path[j].last_path_index == -1){
 										players[i].hero.mpower.path[j] = p;
@@ -419,13 +427,15 @@ int main(int argc, char *argv[]){
 							}	
 							m.terrain[src.y][src.x] = players[i].hero.symbol_on_map;
 							m.terrain[dest.y][dest.x] = tmp;
-						}						
+						}
+					}
 				}
 			}
 			// 1.2 Upadate spell position and apply its effect to player or temple if applicable.
 			int j;
 			for(j = 0; j<CAPACITY_PER_SPELL; j++){
 				if(players[i].hero.mpower.path[j].last_path_index != -1){
+					if ( debugengine) cout << "Upadate spell position and apply its effect to player or temple if applicable.\n";
 					if(players[i].hero.mpower.index[j] < players[i].hero.mpower.path[j].last_path_index-1)
 						players[i].hero.mpower.index[j]++;
 					int index = players[i].hero.mpower.index[j];
@@ -557,8 +567,14 @@ int main(int argc, char *argv[]){
 					players[i].hero.dest_pos.y = -1;
 				}
 				else{
-					players[i].hero.path = p;
-					players[i].hero.curr_path_index = 0;
+					if ( debugengine){ 
+						cout << "Printing the shortest path \n";
+						for (int i = 0; i <= p.last_path_index; i++){
+							cout << (int ) p.path[i][0] << " "  <<(int) p.path[i][1] << endl;
+						}
+						players[i].hero.path = p;
+						players[i].hero.curr_path_index = 0;
+					}
 				}
 				m.terrain[src.y][src.x] = players[i].hero.symbol_on_map;
 				message[4].valid = false;
@@ -614,10 +630,30 @@ int main(int argc, char *argv[]){
 							players[i].hero.route(&m, dest);
 						}
 						if(players[i].hero.path.last_path_index != -1){
-							players[i].hero.curr_path_index++;
-							int index = players[i].hero.curr_path_index;
-							players[i].hero.curr_pos.x = (int)players[i].hero.path.path[index][0];
-							players[i].hero.curr_pos.y = (int)players[i].hero.path.path[index][1];
+							int x, y, index;
+							index = players[i].hero.curr_path_index;
+							if(index == players[i].hero.path.last_path_index){
+								players[i].hero.curr_path_index = -1;
+								players[i].hero.path.last_path_index = -1;
+								players[i].hero.dest_pos.x = -1;
+								players[i].hero.dest_pos.y = -1;
+								players[i].hero.state = STEADY;
+								players[i].hero.attack_mode = MELEE;
+
+							}
+							else{
+								x = (int)(players[i].hero.path.path[index][0]);
+								y = (int)(players[i].hero.path.path[index][1]);
+								m.terrain[y][x] = '.';
+
+								players[i].hero.curr_path_index++;
+								index = players[i].hero.curr_path_index;
+								players[i].hero.curr_pos.x = (int)players[i].hero.path.path[index][0];
+								players[i].hero.curr_pos.y = (int)players[i].hero.path.path[index][1];
+								x = players[i].hero.curr_pos.x;
+								y = players[i].hero.curr_pos.y;
+								m.terrain[y][x] = players[i].hero.symbol_on_map;
+							}
 						}
 					}
 				}
