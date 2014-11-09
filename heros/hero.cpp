@@ -2,6 +2,7 @@
 #include "../magic_spells/spell.h"
 #include "../maps/map.h"
 
+#define debugengine 1
 extern requests message[7];
 
 Hero::Hero(){}
@@ -80,15 +81,23 @@ Hero::Hero(int h_id, char symbol, point curr, int team){
 }
 
 void Hero::process_dfa(){
-	if(inst.empty())
+	cmd_t cmd ; 
+	if(inst.empty()){
+		if ( debugengine) cout << "No instruction. Returning from process DFA \n";
 		return;
+	}else{
+		cmd = inst.front();
+		if ( debugengine) cout << "Command received : " << cmd.command << endl;
+	}
 	
 	if(inst.front().command == CMD_GOTO_X_Y){
+		cout <<"hero.cpp: CMD_GOTO_X_Y received\n";
 		if(!isMovementDisabled){
 			dest_pos.x = inst.front().x;
 			dest_pos.y = inst.front().y;
 			state = MOVING;
 			message[4].valid = true;
+			cout << "Movement not disabled. Destination set and state to Moving\n";
 		}
 		inst.pop();
 		return;
@@ -142,6 +151,7 @@ void Hero::process_dfa(){
 	}
 	
 	if(inst.front().command == CMD_GRABITEM_X_Y){
+		cout <<"hero.cpp: CMD_GRABITEM_X_Y received\n";
 		if(!isMovementDisabled){
 			state = MOVING_TO_COLLECT;
 			message[5].valid = true;
@@ -151,14 +161,18 @@ void Hero::process_dfa(){
 		inst.pop();
 		return;
 	}	
+	inst.pop();
 }
 
 void Hero::drive(){
+	//if ( debugengine) cout << "Drive called \n";
 	if (state == STEADY || state == MOVING || state == MOVING_TO_COLLECT){
+		if (debugengine) cout << "Requesting update in the current position \n";
 		if(state == MOVING || state == MOVING_TO_COLLECT)
 			message[6].valid = true;
 	}
 	else if( state == MOVING_TO_ATTACK_TEMPLE || state == MOVING_TO_ATTACK_HERO){
+		if (debugengine) cout << "In attacking state \n";
 		if(attack_mode == MELEE && curr_path_index == path.last_path_index-1){
 			if(!isMeleeDisabled){
 				int z;
@@ -176,24 +190,35 @@ void Hero::drive(){
 		if(attack_mode == MELEE && curr_path_index < path.last_path_index-1)
 			message[6].valid = true;
 	}
+	//if(debugengine) cout << "Calling process dfa ******************** \n";
 	process_dfa();
+	//if(debugengine) cout << "Return from process dfa ******************** \n";
 }
 
 void Hero::spawn(Map *m){
-	temple *l;
-	if(teamid == TEAM_A)
-		l = &(m->temple_a);
-	else
-		l = &(m->temple_b);
+	if(curr_pos.x != -1 && curr_pos.y != -1){
+		m->terrain[curr_pos.y][curr_pos.x] = '.';
+	}
+	
+	points_list *l;
+	if(teamid == TEAM_A){
+		cout << "Testing Spawn Point of team A\n";
+		l = &(m->team_a_spawn_border);
+	}	
+	else{
+		cout << "Testing Spawn Point of team B\n";
+		l = &(m->team_b_spawn_border);
+	}	
 	
 	int c,v,b;
-	for(c = 0; c < l->boundary.num_of_points; c++){
+	for(c = 0; c < (l->num_of_points); c++){
 		for(v = -1; v<= 1; v++){
 			for(b = -1; b<=1; b++){
 				int x, y;
-				x = (int)(l->boundary.points[c].x);
-				y = (int)(l->boundary.points[c].y);
+				x = l->points[c].x;
+				y = l->points[c].y;
 				if(m->is_empty_location(x+b, y+v)){
+					cout << "Found Empty Loaction at " << x+b << " " << y+v <<"\n";
 					curr_pos.x = x+b;
 					curr_pos.y = y+v;
 					dest_pos.x = -1;
@@ -202,6 +227,7 @@ void Hero::spawn(Map *m){
 					attack_mode = MELEE;
 					path.last_path_index = -1;
 					health = max_health;
+					m->terrain[y+v][x+b] = symbol_on_map;
 					return;
 				}
 			}
