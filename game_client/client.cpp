@@ -989,16 +989,16 @@ void Client::start(){
 						gridx = (int) (e.button.x / 10.);
 						gridy = (int) (e.button.y / 10.);
 						if (terrain[gridy][gridx] <= '7' && terrain[gridy][gridx] >= '1'){
-							if( point_not_invisible(gridx, gridy))
+							//if( point_not_invisible(gridx, gridy))
 							send_grab_item_x_y_command(gridx, gridy);
 						}else if (terrain[gridy][gridx - 1] <= '7' && terrain[gridy][gridx - 1] >= '1'){
-							if( point_not_invisible(gridx, gridy))
+							//if( point_not_invisible(gridx, gridy))
 							send_grab_item_x_y_command(gridx - 1, gridy);
 						}else if (terrain[gridy -1 ][gridx] <= '7' && terrain[gridy- 1][gridx] >= '1'){
-							if( point_not_invisible(gridx, gridy))
+							//if( point_not_invisible(gridx, gridy))
 							send_grab_item_x_y_command(gridx, gridy -1 );
 						}else if (terrain[gridy -1 ][gridx - 1] <= '7' && terrain[gridy- 1][gridx - 1] >= '1'){
-							if( point_not_invisible(gridx, gridy))
+							//if( point_not_invisible(gridx, gridy))
 							send_grab_item_x_y_command(gridx -1 , gridy - 1 );
 						}
 
@@ -1012,7 +1012,7 @@ void Client::start(){
 						gridx = (int) (e.button.x / 10.);
 						gridy = (int) (e.button.y / 10.);
 						if( (terrain[gridy][gridx] == '.' || terrain[gridy][gridx] == 'w' ) 
-								&& point_not_invisible(gridx, gridy)){
+								/*&& point_not_invisible(gridx, gridy)*/){
 							if ( debugcommand) cout << "Coordinates " << e.button.x << " " << e.button.y << endl; 
 							if ( debugcommand) cout << "Grid points " << gridx << " " << gridy << endl; 
 							send_goto_x_y_command(gridx, gridy);
