@@ -388,10 +388,7 @@ int main(int argc, char *argv[]){
 			// Pre-op
 			// 1.1 Allocate the spell if required.
 			if(players[i].hero.state == MOVING_TO_ATTACK_TEMPLE || players[i].hero.state == MOVING_TO_ATTACK_HERO){
-				if (debugengine) cout << "Moving to attack \n";
-
 				if(players[i].hero.attack_mode == MAGIC && !players[i].hero.mpower.is_Disabled){
-					if (debugengine) cout << "Magic mode attack available\n";
 					int range = players[i].hero.mpower.range;
 					int currIndex = players[i].hero.curr_path_index;
 					int destIndex = players[i].hero.path.last_path_index;
@@ -399,7 +396,6 @@ int main(int argc, char *argv[]){
 					int j;
 					char tmp;
 					if(n){
-						if (debugengine) cout << "Nitro is available\n";
 						if(range >= destIndex - currIndex){
 							if (debugengine) cout << "Target in range\n";
 							point src, dest;
@@ -421,8 +417,9 @@ int main(int argc, char *argv[]){
 								players[i].hero.state = STEADY;
 								players[i].hero.curr_path_index = -1;
 								players[i].hero.path.last_path_index = -1;
-								players[i].hero.dest_pos.x = -1;
-								players[i].hero.dest_pos.y = -1;	
+								//players[i].hero.dest_pos.x = -1;
+								//players[i].hero.dest_pos.y = -1;
+								players[i].hero.dest_pos = players[i].hero.curr_pos;	
 								players[i].hero.attack_mode = MELEE;
 							}	
 							m.terrain[src.y][src.x] = players[i].hero.symbol_on_map;
@@ -546,11 +543,33 @@ int main(int argc, char *argv[]){
 
 			//*message1: update(decrease) health of other hid by given amt.
 			//(Take care of spawning if required) (if moving in attack mode , go to stedy)
+			if(message[1].valid == true){
+				int victim = message[1].int1;
+				int dec = message[1].int2;
+				players[victim].hero.health += dec;
+				if(players[victim].hero.health <= 0){
+					players[victim].hero.spawn(&m);
+				}
+				players[i].hero.curr_path_index = -1;
+				players[i].hero.path.last_path_index = -1;
+				//players[i].hero.dest_pos.x = -1;
+				//players[i].hero.dest_pos.y = -1;
+				players[i].hero.dest_pos = players[i].hero.curr_pos;
+				players[i].hero.state = STEADY;
+				players[i].hero.attack_mode = MELEE;	
+				
+				message[1].valid = false;
+			}
 
 			//*message2: Set my dest_x, dest_y to nearest point,
 			//adjacent to opponent temple boundary.
 
 			//*message3: Set my dest_x, dest_y to current position of opponent hid.
+			if(message[3].valid == true){
+				players[i].hero.dest_pos = players[players[i].hero.target_id].hero.curr_pos;
+				players[i].hero.route(&m, players[i].hero.dest_pos, 1);
+				message[3].valid = false;
+			}
 
 			//*message4: Set my path variable wrt my position & my des_x, dest_y.
 			//(if no path then stedy) GOTO X Y
@@ -563,25 +582,48 @@ int main(int argc, char *argv[]){
 					players[i].hero.attack_mode = MELEE;
 					players[i].hero.path.last_path_index = -1;
 					players[i].hero.curr_path_index = -1;
-					players[i].hero.dest_pos.x = -1;
-					players[i].hero.dest_pos.y = -1;
+					//players[i].hero.dest_pos.x = -1;
+					//players[i].hero.dest_pos.y = -1;
+					players[i].hero.dest_pos = players[i].hero.curr_pos;
 				}
 				else{
+					
 					if ( debugengine){ 
 						cout << "Printing the shortest path \n";
 						for (int i = 0; i <= p.last_path_index; i++){
 							cout << (int ) p.path[i][0] << " "  <<(int) p.path[i][1] << endl;
 						}
-						players[i].hero.path = p;
-						players[i].hero.curr_path_index = 0;
 					}
+					players[i].hero.path = p;
+					players[i].hero.curr_path_index = 0;
 				}
 				m.terrain[src.y][src.x] = players[i].hero.symbol_on_map;
+				
 				message[4].valid = false;
 			}
 			//*message5: Set my dest_x, dest_y to item at x,y and set my path variable.
 			//(if it is no loger there then stedy)
-
+			if(message[5].valid == true){
+				int x, y;
+				x = message[5].int1;
+				y = message[5].int2;
+				if(m.terrain[y][x] >= '0' && m.terrain[y][x] <= '7'){
+					players[i].hero.dest_pos.x = x;
+					players[i].hero.dest_pos.y = y;
+					players[i].hero.route(&m, players[i].hero.dest_pos, 1);
+				}
+				else{
+					players[i].hero.curr_path_index = -1;
+					players[i].hero.path.last_path_index = -1;
+					//players[i].hero.dest_pos.x = -1;
+					//players[i].hero.dest_pos.y = -1;
+					players[i].hero.dest_pos = players[i].hero.curr_pos;
+					players[i].hero.state = STEADY;
+					players[i].hero.attack_mode = MELEE;
+				}				
+				
+				message[5].valid = false;
+			}
 			//*message6:  if motion is not disabled: update my current location to next using my path variable.
 			//(New path will be found if blocked. and then increment wil be done. if it moving in attack mode
 			//and its target has moved then new path will be found and icrement will be done. If moving in
@@ -590,44 +632,49 @@ int main(int argc, char *argv[]){
 			if(message[6].valid == true){
 				if(!players[i].hero.isMovementDisabled){
 					if(players[i].hero.state == MOVING_TO_ATTACK_HERO){
-						point src = players[i].hero.curr_pos;
-						point dest = players[i].hero.dest_pos;
-						point target = players[players[i].hero.target_id].hero.curr_pos;
-						if(dest.x != target.x && dest.y != target.y){
+						cout << "MOVING_TO_ATTACK_HERO"<<players[i].hero.path.last_path_index<<"\n";
+						point z = players[i].hero.dest_pos;
+						point w = players[players[i].hero.target_id].hero.curr_pos;
+						if(z.x != w.x && z.y != w.y){
 							//Target has moved. Re-route;
-							players[i].hero.route(&m, target);
+							cout <<"Target has moved. Re-route"<< endl;
+							players[i].hero.route(&m, w, 1);
+						}
+						else{
+							cout <<"Target has not moved."<< endl;
 						}
 					}
 					
 					point next;
 					int cpi = players[i].hero.curr_path_index;
+					int lpi = players[i].hero.path.last_path_index-1;
 					next.x = (int)players[i].hero.path.path[cpi+1][0];
 					next.y = (int)players[i].hero.path.path[cpi+1][1];
-					if(players[i].hero.state == MOVING_TO_COLLECT){
-						if(players[i].hero.curr_path_index == players[i].hero.path.last_path_index-1){
-							if(m.terrain[next.y][next.x] >= '1' && m.terrain[next.y][next.x] <= '7'){
-								int index = (int)(m.terrain[next.y][next.x]-'1');
-								int curr_capacity = players[i].hero.bag.curr_capacity;
-								int req_space = players[i].hero.bag.items[index].required_space;
-								int bag_capacity = players[i].hero.bag.bag_capacity;
-								if(curr_capacity + req_space <= bag_capacity){
-									players[i].hero.bag.items[index].quantity++;
-									players[i].hero.bag.curr_capacity += req_space;
-									m.terrain[next.y][next.x] = '.';
-								}
+					if(players[i].hero.state == MOVING_TO_COLLECT && cpi == lpi){
+						if(m.terrain[next.y][next.x] >= '1' && m.terrain[next.y][next.x] <= '7'){
+							int index = (int)(m.terrain[next.y][next.x]-'1');
+							int curr_capacity = players[i].hero.bag.curr_capacity;
+							int req_space = players[i].hero.bag.items[index].required_space;
+							int bag_capacity = players[i].hero.bag.bag_capacity;
+							if(curr_capacity + req_space <= bag_capacity){
+								players[i].hero.bag.items[index].quantity++;
+								players[i].hero.bag.curr_capacity += req_space;
+								m.terrain[next.y][next.x] = '.';
 							}
-							players[i].hero.curr_path_index = -1;
-							players[i].hero.path.last_path_index = -1;
-							players[i].hero.dest_pos.x = -1;
-							players[i].hero.dest_pos.y = -1;
-							players[i].hero.state = STEADY;
-							players[i].hero.attack_mode = MELEE;
 						}
+						players[i].hero.curr_path_index = -1;
+						players[i].hero.path.last_path_index = -1;
+						//players[i].hero.dest_pos.x = -1;
+						//players[i].hero.dest_pos.y = -1;
+						players[i].hero.dest_pos = players[i].hero.curr_pos;
+						players[i].hero.state = STEADY;
+						players[i].hero.attack_mode = MELEE;
 					}
 					else{
 						if(!m.is_empty_location(next.x, next.y)){
+							cout << "Posiible collision with " << m.terrain[next.y][next.x]<<endl;
 							point dest = players[i].hero.dest_pos;
-							players[i].hero.route(&m, dest);
+							players[i].hero.route(&m, dest, 0);
 						}
 						if(players[i].hero.path.last_path_index != -1){
 							int x, y, index;
@@ -635,8 +682,9 @@ int main(int argc, char *argv[]){
 							if(index == players[i].hero.path.last_path_index){
 								players[i].hero.curr_path_index = -1;
 								players[i].hero.path.last_path_index = -1;
-								players[i].hero.dest_pos.x = -1;
-								players[i].hero.dest_pos.y = -1;
+								//players[i].hero.dest_pos.x = -1;
+								//players[i].hero.dest_pos.y = -1;
+								players[i].hero.dest_pos = players[i].hero.curr_pos;
 								players[i].hero.state = STEADY;
 								players[i].hero.attack_mode = MELEE;
 
@@ -661,6 +709,6 @@ int main(int argc, char *argv[]){
 			}
 		}
 		
-		usleep(30000);
+		usleep(300000);
 	}
 }
