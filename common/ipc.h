@@ -7,10 +7,12 @@
 #define CMD_USEITEM_X 		102
 #define CMD_GRABITEM_X_Y 	103
 #define CMD_QUIT 		104
+#define CMD_INVALID 		200
 
 typedef struct cmd_t {
 
 	int command ; 
+	int attack_mode;
 	int pid; 
 	int x ; 
 	int y ; 
