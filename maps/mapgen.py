@@ -167,7 +167,7 @@ for j in [L,U]:
 
 
 # Draw Collectible Items
-items = list(np.random.random_integers(1, 9, size=(1,rows*cols/50))[0])
+items = list(np.random.random_integers(1, 7, size=(1,rows*cols/50))[0])
 items = [str(i) for i in items]
 L, U = GenCoordList(rows*cols/100, Map)
 for j in [L,U]:
