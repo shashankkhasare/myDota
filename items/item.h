@@ -1,7 +1,15 @@
 #ifndef ITEM_H
 #define ITEM_H
+
+#include <fstream>
+#include <string>
+#include <iostream>
+#include <stdlib.h>
+
+using namespace std;
+
 typedef struct item{
-	int item_id;
+	string image_file;
 	int movement_speed;
 	int attack_speed;
 	int health;
@@ -15,5 +23,5 @@ typedef struct item{
 /**
   * Creates item by reading filename from items folder. If filename does not exist, game exits.
 **/  
-item * init_item(char *filename);
+item init_item(const char *filename);
 #endif
