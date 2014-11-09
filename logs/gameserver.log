@@ -1,4 +1,0 @@
-Starting the game server
-debug :: Start server called 
-debug :: Trying to open socket on 10.250.214.1328181
-bind() : Failed to bind. 
