@@ -1,1 +1,0 @@
-Each player (i.e. AI or Human. Call it bot.) is given botname.cpp with empty Drive() function. Human.cpp will be added for reference soon. Drive() function is supposed to generate commands given in command_gen_enqueue_input_buff. So one can built intelligent AI code by writing clever code in Drive().

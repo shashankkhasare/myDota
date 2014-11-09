@@ -1,1 +1,9 @@
-Each spell will be associated with some config.
+Fields of spell config file:
+1)NAME: 		Some fancy name of spell. 
+2)MAGIC: 		Take values 0, -1 each coressponding to not affecting opponents magic ability, and disableing the same respectively. 
+			If -1 is specfied then magic ability is disabled for specified TIME field
+3)ATTACK_SPEED: 	Defines decrement in opponent attack speed. If -1 is specfied then attack is disabled for specified TIME field.
+4)MOVEMENT_SPEED: 	Defines decrement in opponent movement speed.  If -1 is specfied then movement is disabled for specified TIME field.
+5)DAMAGE: 		Defines decrement in opponent health.
+6)TIME: 		Defines time until which disability lasts.
+7)RANGE: 		Defines maximum distance from which we can cast spell.
