@@ -357,8 +357,8 @@ path_t Map::is_line_of_sight_clear(point src, point dest){
 bool Map::is_empty_location(int x, int y){
 	if(x >= cols || y >= rows || x < 0 || y < 0)
 		return false;
-		
-	if(terrain[y][x] == 'J' || terrain[y][x] >= '1' && terrain[y][x] <= '9' || 
+	cout << x << " " << y <<" "  << terrain[y][x] << endl;
+	if(terrain[y][x] == 'J' || terrain[y][x] >= '1' && terrain[y][x] <= '7' || 
 	   terrain[y][x] == 'A' || terrain[y][x] == 'B' || terrain[y][x] == 'W' ){
 		return false;
 	}
