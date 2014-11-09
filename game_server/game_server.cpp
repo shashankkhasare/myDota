@@ -89,7 +89,13 @@ cmd_t read_and_display_command(int sock){
 			if ( inputdebug ) cout << "inputdebug :: command CMD_GOTO_X_Y received " << cmd.x << " "  << cmd.y << endl;
 			break;
 		case CMD_ATTACK_PID:
-			if ( inputdebug ) cout << "inputdebug :: command CMD_ATTACK_PID received " <<  cmd.pid << endl;
+			if ( inputdebug ){
+				if ( cmd.attack_mode == MAGIC)
+					cout << "inputdebug :: command CMD_ATTACK_PID magic mode received " <<  cmd.pid << endl;
+				else
+					cout << "inputdebug :: command CMD_ATTACK_PID melee mode received " <<  cmd.pid << endl;
+			}
+
 			break;
 		case CMD_USEITEM_X:
 			if ( inputdebug ) cout << "inputdebug :: command CMD_USEITEM_X received " <<  cmd.x << endl;
