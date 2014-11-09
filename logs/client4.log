@@ -1,0 +1,6 @@
+debug :: Received ok 
+186  597debug :: Ok received for hid 
+285  480debug :: Click in team screen 
+debug :: Team 2 selected 
+debug :: Team b selection successful 
+Player id : 3

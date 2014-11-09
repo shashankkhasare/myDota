@@ -1,17 +1,34 @@
 debug :: Received ok 
-158  53debug :: Ok received for hid 
-185  89debug :: Click in team screen 
+245  200debug :: Ok received for hid 
+335  289debug :: Click in team screen 
 debug :: Team 1 selected 
 debug :: Team 1 selection successful 
-Player id : 1
+Player id : 0
 debug :: received OK for opening bcast channel 
-Health is 0
-Health is 0
-Health is 0
-Health is 0
-Health is 0
-Health is 0
-Health is 0
-Health is 0
-Health is 0
-Health is 0
+Enemies identified and saved in the enemies list 
+Their locations are :  
+170190
+170190
+460190
+Coordinates 332 341
+Grid points 33 34
+debugcommand :: sending the command to server CMD_GOTO_X_Y
+debugcommand :: send the command and received ok from server 
+Coordinates 174 198
+Grid points 17 19
+debugcommand :: sending the command to server CMD_GOTO_X_Y
+debugcommand :: send the command and received ok from server 
+Coordinates 125 95
+Grid points 12 9
+debugcommand :: sending the command to server CMD_GOTO_X_Y
+debugcommand :: send the command and received ok from server 
+Coordinates 202 222
+Grid points 20 22
+debugcommand :: sending the command to server CMD_GOTO_X_Y
+debugcommand :: send the command and received ok from server 
+Coordinates 249 309
+Grid points 24 30
+debugcommand :: sending the command to server CMD_GOTO_X_Y
+debugcommand :: send the command and received ok from server 
+debugcommand:: sending the command to server CMD_QUIT 
+debugcommand:: send the command and received ok from server 

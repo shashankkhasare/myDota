@@ -44,7 +44,7 @@ int getSocket(char *ip, int  port);
 player_data_t playerdata[4] = {0};
 player_data_t temple_a_data = {TEMPLE_A_ID, 2000, 0, -1, TEAM_A};
 player_data_t temple_b_data = {TEMPLE_B_ID, 2000, 0, -1, TEAM_B}; 
-
+magic_data_t magicdata;
 
 //Entity p0_e, p1_e, p2_e, p3_e; 
 
@@ -287,26 +287,26 @@ void send_hid_and_settle_team(int sock)
 
 
 
-	Widget menu("images/menu.bmp", NULL);
+	Widget menu("images/wfree750.bmp", NULL);
 	menu.setLocation(0, 0);
 	menu.setDim(750 , 750 );
 
 
 
 
-	Widget h1("images/h1.bmp", "images/h1_hover.bmp", 10, 10, 200, 200);
-	Widget h2("images/h2.bmp", "images/h2_hover.bmp", 250, 10, 200, 200);
-	Widget h3("images/h3.bmp", "images/h3_hover.bmp", 10, 250, 200, 200);
-	Widget h4("images/h4.bmp", "images/h4_hover.bmp", 250, 250, 200, 200);
+	Widget h1("images/h1.bmp", "images/h1_hover.bmp", 125, 125, 200, 200);
+	Widget h2("images/h2.bmp", "images/h2_hover.bmp", 125, 425, 200, 200);
+	Widget h3("images/h3.bmp", "images/h3_hover.bmp", 425, 125, 200, 200);
+	Widget h4("images/h4.bmp", "images/h4_hover.bmp", 425, 425, 200, 200);
 
 
 
-	Widget teama("images/teama.bmp", NULL, 50, 50, 400, 87);
-	Widget teamb("images/teamb.bmp", NULL, 50, 150, 400, 87);
+	Widget teama("images/teama.bmp", "images/teama_hover.bmp", 222,240, 324, 86);
+	Widget teamb("images/teamb.bmp", "images/teamb_hover.bmp", 222,426, 306, 86);
 
-	Widget teama_full("images/full.bmp", NULL, 50, 50, 400, 87);
-	Widget teamb_full("images/full.bmp", NULL, 50, 150, 400, 87);
-	Widget allteamsfull("images/allteamsfull.bmp", NULL, 50, 150, 441, 87);
+	Widget teama_full("images/full.bmp", NULL, 222, 240, 381, 86);
+	Widget teamb_full("images/full.bmp", NULL, 222, 426, 381, 86);
+	Widget allteamsfull("images/allteamsfull.bmp", NULL, 95, 333, 561, 86);
 
 
 
@@ -337,6 +337,8 @@ void send_hid_and_settle_team(int sock)
 					h2.handleHover(e);
 					h3.handleHover(e);
 					h4.handleHover(e);
+					teama.handleHover(e);
+					teamb.handleHover(e);
 					break;
 
 				case SDL_MOUSEBUTTONDOWN: 
@@ -465,7 +467,7 @@ void send_hid_and_settle_team(int sock)
 }
 
 
-Client::Client(char * address, int port ,  int m){
+Client::Client(char * address, int port){
 	// setting vars 
 	//gamemode = m; 
 
@@ -588,12 +590,32 @@ void *  bcast_receiver(void *This){
 			}else {
 				if ( debugbcast) cout << "Unknown game state received \n";  
 			}	
+		}else if ( h.type == BCAST_MAGIC){
+			if ( debugbcast) cout << "debugbcast:: Ok sent waiting for the magic bcast data  \n";
+			recv(bcast_sock, &magicdata,sizeof(magicdata) , 0); 
+			reply.type = OK;
+			send(bcast_sock, &reply, sizeof(reply), 0); 
+
 		}
 		else {
 			if(debugbcast) cout << " Received unknown bcast message : " << h.type << endl; 
 		}
 
 	}
+}
+void Client::startAI(){
+
+	pthread_t tid; 
+	cmd_t cmd; 
+	header head; 
+	pthread_create(&tid, NULL , bcast_receiver, NULL);
+	SDL_Init(SDL_INIT_EVERYTHING);
+	while(1){
+		int x = rand() % 74;
+		sleep(3);
+		send_goto_x_y_command(x, x);
+	}
+
 }
 void Client::start(){
 
@@ -790,6 +812,8 @@ void Client::start(){
 	identify_enemies(&p0_e, &p1_e, &p2_e, &p3_e, &ta_e, &tb_e);
 	Widget target("images/target.bmp" , NULL, 0 , 0 , 20 , 20  ) ; 
 	Widget grab("images/grab.bmp" , NULL, 0 , 0 , 30 , 19  ) ; 
+	Widget magic("images/magic.bmp" , NULL, 0 , 0 , 30 , 30  ) ; 
+
 	if ( playerdata[pid].team == TEAM_A){
 		SDL_WM_SetCaption(TEAM_A_NAME, NULL);
 	}else{
@@ -854,6 +878,15 @@ void Client::start(){
 		}else {
 
 			SDL_ShowCursor(1);
+		}
+
+		for ( int i = 0; i < magicdata.no; i++)
+		{
+			int x,  y ; 
+			x = magicdata.x[i];
+			y = magicdata.y[i];
+			magic.setLocation(x, y);
+			SDL_BlitSurface(magic.getSurface(), NULL, screen, magic.getRectAddr());
 		}
 
 		while(SDL_PollEvent(&e)){
@@ -956,16 +989,16 @@ void Client::start(){
 						gridx = (int) (e.button.x / 10.);
 						gridy = (int) (e.button.y / 10.);
 						if (terrain[gridy][gridx] <= '7' && terrain[gridy][gridx] >= '1'){
-							if( point_not_invisible(gridx, gridy))
+							//if( point_not_invisible(gridx, gridy))
 							send_grab_item_x_y_command(gridx, gridy);
 						}else if (terrain[gridy][gridx - 1] <= '7' && terrain[gridy][gridx - 1] >= '1'){
-							if( point_not_invisible(gridx, gridy))
+							//if( point_not_invisible(gridx, gridy))
 							send_grab_item_x_y_command(gridx - 1, gridy);
 						}else if (terrain[gridy -1 ][gridx] <= '7' && terrain[gridy- 1][gridx] >= '1'){
-							if( point_not_invisible(gridx, gridy))
+							//if( point_not_invisible(gridx, gridy))
 							send_grab_item_x_y_command(gridx, gridy -1 );
 						}else if (terrain[gridy -1 ][gridx - 1] <= '7' && terrain[gridy- 1][gridx - 1] >= '1'){
-							if( point_not_invisible(gridx, gridy))
+							//if( point_not_invisible(gridx, gridy))
 							send_grab_item_x_y_command(gridx -1 , gridy - 1 );
 						}
 
@@ -979,7 +1012,7 @@ void Client::start(){
 						gridx = (int) (e.button.x / 10.);
 						gridy = (int) (e.button.y / 10.);
 						if( (terrain[gridy][gridx] == '.' || terrain[gridy][gridx] == 'w' ) 
-								&& point_not_invisible(gridx, gridy)){
+								/*&& point_not_invisible(gridx, gridy)*/){
 							if ( debugcommand) cout << "Coordinates " << e.button.x << " " << e.button.y << endl; 
 							if ( debugcommand) cout << "Grid points " << gridx << " " << gridy << endl; 
 							send_goto_x_y_command(gridx, gridy);
@@ -1048,13 +1081,12 @@ int main(int argc, char * argv[])
 
 	int gamemode = atoi(argv[2]);
 
+	Client c(address, 8181);
 	if ( gamemode == HUMAN){
-		Client c(address, 8181,  HUMAN);
 		c.start();
-
-
 	}else if ( gamemode == AI )
 	{
+		c.startAI();
 
 	}else
 	{
