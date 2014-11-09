@@ -33,3 +33,7 @@ clean:
 	cd game_server; make clean
 	cd game_client; make clean
 	rm  mydota gameserver client main.o 
+
+kill:
+	killall gameserver
+	killall client
