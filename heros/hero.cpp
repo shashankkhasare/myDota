@@ -116,8 +116,7 @@ void Hero::process_dfa(){
 				target_type = TARGET_TYPE_TEMPLE;
 				message[2].valid = true;
 				state = MOVING_TO_ATTACK_TEMPLE;
-			}	
-			
+			}
 		}
 		inst.pop();
 		return;			
@@ -180,7 +179,7 @@ void Hero::drive(){
 					z = 0;
 				else
 					z = 1;
-				
+				cout << "Melee Attack Successful\n";
 				message[z].valid = true;
 				message[z].int1 = target_id;
 				message[z].int2 = -(damage*attack_speed);
@@ -221,8 +220,9 @@ void Hero::spawn(Map *m){
 					cout << "Found Empty Loaction at " << x+b << " " << y+v <<"\n";
 					curr_pos.x = x+b;
 					curr_pos.y = y+v;
-					dest_pos.x = -1;
-					dest_pos.y = -1;
+					//dest_pos.x = -1;
+					//dest_pos.y = -1;
+					dest_pos = curr_pos;
 					state = STEADY;
 					attack_mode = MELEE;
 					path.last_path_index = -1;
@@ -235,20 +235,33 @@ void Hero::spawn(Map *m){
 	}
 }
 
-void Hero::route(Map *m, point dest){
-	char temp = m->terrain[dest.y][dest.x];
+void Hero::route(Map *m, point dest, int option){
+	if(!m->is_empty_location(dest.x, dest.y) && option != 1){
+		curr_path_index = -1;
+		path.last_path_index = -1;
+		//dest_pos.x = -1;
+		//dest_pos.y = -1;
+		dest_pos = curr_pos;
+		state = STEADY;
+		attack_mode = MELEE;
+		return;
+	}
 	
+	char temp = m->terrain[dest.y][dest.x];
 	m->terrain[curr_pos.y][curr_pos.x] = '.';
 	m->terrain[dest.y][dest.x] = '.';
 	
 	path_t p = m->get_shortest_path(curr_pos, dest);
-	if(p.last_path_index != -1)
+	if(p.last_path_index != -1){
 		path = p;
+		curr_path_index = 0;
+	}	
 	else{
 		curr_path_index = -1;
 		path.last_path_index = -1;
-		dest_pos.x = -1;
-		dest_pos.y = -1;
+		//dest_pos.x = -1;
+		//dest_pos.y = -1;
+		dest_pos = curr_pos;
 		state = STEADY;
 		attack_mode = MELEE;
 	}
