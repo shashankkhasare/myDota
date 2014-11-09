@@ -26,6 +26,8 @@
 #define debug 1
 using namespace std; 
 
+requests message [7];
+
 int port; 
 int available_pid=0;
 int max_players;
@@ -71,12 +73,13 @@ struct sockaddr_in getSelfAddress(){
 	freeifaddrs(ifap);
 	return ret;
 }
-void read_and_display_command(int sock){
+cmd_t read_and_display_command(int sock){
 
-	cmd_t cmd; 
+	cmd_t cmd;
+	cmd.command = CMD_INVALID; 
 	header reply; 
 	if ( -1 == recv(sock, &cmd, sizeof(cmd), 0)){
-		return;
+		return cmd;
 	}
 	reply.type = OK;
 	send(sock, &reply, sizeof(reply), 0);
@@ -100,6 +103,7 @@ void read_and_display_command(int sock){
 		default:
 			cout << "Error:: Unknown command received from the client \n";
 	}
+	return cmd;
 }
 
 void startServer(struct sockaddr_in addr){
@@ -158,7 +162,9 @@ void serve_connection(sockaddr_in client , int sock_fd)
 		head.type = OK;
 		send(sock_fd, &head, sizeof(head), 0);
 		if ( debug ) cout << "HID : " << d.data; 
-		Hero h(d.data); // create hero 
+		point curr;
+		curr.x = -1, curr.y = -1;
+		Hero h(d.data,  'q', curr, -1); // create hero 
 		if ( debug ) cout << "Hero created \n";
 		if ( debug ) cout << "available_pid " << available_pid << "socket fd : " << sock_fd << endl; 
 		// get the team choice
@@ -170,6 +176,8 @@ void serve_connection(sockaddr_in client , int sock_fd)
 				if( team_a.size() < 2){
 					team_a.push_back(available_pid);
 					reply.type = ACCEPTED; 
+					h.teamid = teamid;
+					h.symbol_on_map = 'P' + available_pid;
 					send(sock_fd, &reply, sizeof(reply), 0);
 					break;
 				}else
@@ -183,6 +191,8 @@ void serve_connection(sockaddr_in client , int sock_fd)
 				if( team_b.size() < 2){
 					team_b.push_back(available_pid);
 					reply.type = ACCEPTED; 
+					h.teamid = teamid;
+					h.symbol_on_map = 'P' + available_pid;
 					send(sock_fd, &reply, sizeof(reply), 0);
 					break;
 				}else
@@ -196,7 +206,10 @@ void serve_connection(sockaddr_in client , int sock_fd)
 				if ( debug ) cout << " debug :: invalid teamid received " << endl; 
 			}
 		}
-
+		
+		//Set Current position After Spawning.
+		h.spawn(&m);
+		
 		// make the ipc socket nonblocking 
 		fd_set_blocking(sock_fd, 0 ) ; 
 		Player p(available_pid, sock_fd, client,  h);
@@ -252,7 +265,7 @@ void * bcast_sender(void *T){
 				player_data_t pdata; // id health nitro hid team  
 				pdata.id = j;
 				pdata.health = players[j].hero.health;  
-				pdata.nitro = players[j].hero.nitro.value;
+				pdata.nitro = players[j].hero.mpower.nitro;
 				pdata.hid = players[j].hero.hid; 
 				if ( bcastdebug ) cout << "pdata.id : " << pdata.id; 
 				if ( bcastdebug ) cout << " pdata.health: " << pdata.health; 
@@ -360,10 +373,252 @@ int main(int argc, char *argv[]){
 		// check round robin 
 		for ( int i = 0 ; i < 4 ; i ++ ) {
 			int ipc = players[i].input_fd;
-			read_and_display_command(ipc);
-		}
-		// all game code here 
+			cmd = read_and_display_command(ipc);
+			if(cmd.command != CMD_INVALID)
+				players[i].hero.inst.push(cmd);
+			
+			// Pre-op
+			// 1.1 Allocate the spell if required.
+			if(players[i].hero.state == MOVING_TO_ATTACK_TEMPLE || players[i].hero.state == MOVING_TO_ATTACK_HERO){
+				if(players[i].hero.attack_mode == MAGIC && !players[i].hero.mpower.is_Disabled){
+					int range = players[i].hero.mpower.range;
+					int currIndex = players[i].hero.curr_path_index;
+					int destIndex = players[i].hero.path.last_path_index;
+					int n = players[i].hero.mpower.nitro;
+					int j;
+					char tmp;
+					if(n)
+						if(range >= destIndex - currIndex){
+							point src, dest;
+							src = players[i].hero.curr_pos;
+							dest = players[i].hero.dest_pos;
+							m.terrain[src.y][src.x] = '.';
+							tmp = m.terrain[dest.y][dest.x];
+							m.terrain[dest.y][dest.x] = '.';
+							path_t p = m.is_line_of_sight_clear(src, dest);
+							if(p.last_path_index != -1){
+								for(j = 0; j<CAPACITY_PER_SPELL; j++)
+									if(players[i].hero.mpower.path[j].last_path_index == -1){
+										players[i].hero.mpower.path[j] = p;
+										players[i].hero.mpower.index[j] = 0;
+										break;
+									}	
+								players[i].hero.mpower.nitro--;	
+								players[i].hero.state = STEADY;
+								players[i].hero.curr_path_index = -1;
+								players[i].hero.path.last_path_index = -1;
+								players[i].hero.dest_pos.x = -1;
+								players[i].hero.dest_pos.y = -1;	
+								players[i].hero.attack_mode = MELEE;
+							}	
+							m.terrain[src.y][src.x] = players[i].hero.symbol_on_map;
+							m.terrain[dest.y][dest.x] = tmp;
+						}						
+				}
+			}
+			// 1.2 Upadate spell position and apply its effect to player or temple if applicable.
+			int j;
+			for(j = 0; j<CAPACITY_PER_SPELL; j++){
+				if(players[i].hero.mpower.path[j].last_path_index != -1){
+					if(players[i].hero.mpower.index[j] < players[i].hero.mpower.path[j].last_path_index-1)
+						players[i].hero.mpower.index[j]++;
+					int index = players[i].hero.mpower.index[j];
+					int last_index = players[i].hero.mpower.path[j].last_path_index;
+					int x, y;
+					point target;
+					target.x = -1, target.y = -1;
+					x = players[i].hero.mpower.path[j].path[index][0];
+					y = players[i].hero.mpower.path[j].path[index][1];
+					
+					if(index == last_index-1){
+						target.x = (int)players[i].hero.mpower.path[j].path[last_index][0];
+						target.y = (int)players[i].hero.mpower.path[j].path[last_index][1];
+					}	
+					else if(!m.is_empty_location(x, y)){
+						//Someone is in the way. Victim found.
+						target.x = x;
+						target.y = y;
+					}
+					
+					if(target.x != -1 && target.y != -1){
+						char t = m.terrain[target.y][target.x];
+						int z = -1, n = -1;
+						switch(t){
+							case 'P':
+								z = 0;
+								break;
+							case 'Q':
+								z = 1;
+								break;
+							case 'R':
+								z = 2;
+								break;
+							case 'S':
+								z = 3;
+								break;
+							case 'a':
+								n = 0;
+								break;
+							case 'b':
+								n = 1;
+								break;
+						}
+						if(z != -1){
+							if(players[i].hero.mpower.magic == -1){
+								players[z].hero.mpower.is_Disabled = true;
+								time(&(players[z].hero.mpower.magic_lock));
+								players[z].hero.mpower.magic_lock += players[i].hero.mpower.time;
+							}
+														
+							if(players[i].hero.mpower.attack_speed == -1){
+								players[z].hero.isMeleeDisabled = true;
+								time(&(players[z].hero.melee_lock));
+								players[z].hero.melee_lock += players[i].hero.mpower.time;
+							}else{
+								players[z].hero.attack_speed -= players[i].hero.mpower.attack_speed;
+								if(players[z].hero.attack_speed <= 0)
+									players[z].hero.attack_speed = 1;
+							}
+							
+							if(players[i].hero.mpower.movement_speed == -1){
+								players[z].hero.isMovementDisabled = true;
+								time(&(players[z].hero.movement_lock));
+								players[z].hero.movement_lock += players[i].hero.mpower.time;
+							}else{
+								players[z].hero.movement_speed -= players[i].hero.mpower.movement_speed;
+								if(players[z].hero.movement_speed <= 0)
+									players[z].hero.movement_speed = 1;
+							}
+							
+							players[z].hero.health -= players[i].hero.mpower.damage;
+							if(players[z].hero.health <= 0){
+								players[z].hero.spawn(&m);
+							}	
+						}
+						else{
+							temple *l;
+							if(n == 0)
+								l = &(m.temple_a);
+							else
+								l = &(m.temple_b);	
+							l -> health -= players[i].hero.mpower.damage;
+							if(l -> health < 0)
+								l -> health = 0;
+						}
+					}
+						
+				}
+			}
+			
+			// 1.3 Recover player from disability if any.
+			time_t curr;
+			time(&curr);
+			if(players[i].hero.mpower.is_Disabled == true && players[i].hero.mpower.magic_lock >= curr)
+				players[i].hero.mpower.is_Disabled == false;
+			if(players[i].hero.isMeleeDisabled == true && players[i].hero.melee_lock >= curr)
+				players[i].hero.isMeleeDisabled == false;
+			if(players[i].hero.isMovementDisabled == true && players[i].hero.movement_lock >= curr)
+				players[i].hero.isMovementDisabled == false;	
+			
+			// Brust
+			players[i].hero.drive();
+			
+			// Post-op: Process message.
 
+			//message0: update health of temple a/b by some given amt.		
+			//(if moving in attack mode , go to stedy)						
+
+			//*message1: update(decrease) health of other hid by given amt.
+			//(Take care of spawning if required) (if moving in attack mode , go to stedy)
+
+			//*message2: Set my dest_x, dest_y to nearest point,
+			//adjacent to opponent temple boundary.
+
+			//*message3: Set my dest_x, dest_y to current position of opponent hid.
+
+			//*message4: Set my path variable wrt my position & my des_x, dest_y.
+			//(if no path then stedy) GOTO X Y
+			if(message[4].valid == true){
+				point src = players[i].hero.curr_pos;
+				m.terrain[src.y][src.x] = '.';
+				path_t p = m.get_shortest_path(players[i].hero.curr_pos, players[i].hero.dest_pos);
+				if(p.last_path_index == -1){
+					players[i].hero.state = STEADY;
+					players[i].hero.attack_mode = MELEE;
+					players[i].hero.path.last_path_index = -1;
+					players[i].hero.curr_path_index = -1;
+					players[i].hero.dest_pos.x = -1;
+					players[i].hero.dest_pos.y = -1;
+				}
+				else{
+					players[i].hero.path = p;
+					players[i].hero.curr_path_index = 0;
+				}
+				m.terrain[src.y][src.x] = players[i].hero.symbol_on_map;
+				message[4].valid = false;
+			}
+			//*message5: Set my dest_x, dest_y to item at x,y and set my path variable.
+			//(if it is no loger there then stedy)
+
+			//*message6:  if motion is not disabled: update my current location to next using my path variable.
+			//(New path will be found if blocked. and then increment wil be done. if it moving in attack mode
+			//and its target has moved then new path will be found and icrement will be done. If moving in
+			//collect mode and increment leads to last stop then check if last pt has item.
+			//If yes and sack has capacity then add it. otherwise stedy.)
+			if(message[6].valid == true){
+				if(!players[i].hero.isMovementDisabled){
+					if(players[i].hero.state == MOVING_TO_ATTACK_HERO){
+						point src = players[i].hero.curr_pos;
+						point dest = players[i].hero.dest_pos;
+						point target = players[players[i].hero.target_id].hero.curr_pos;
+						if(dest.x != target.x && dest.y != target.y){
+							//Target has moved. Re-route;
+							players[i].hero.route(&m, target);
+						}
+					}
+					
+					point next;
+					int cpi = players[i].hero.curr_path_index;
+					next.x = (int)players[i].hero.path.path[cpi+1][0];
+					next.y = (int)players[i].hero.path.path[cpi+1][1];
+					if(players[i].hero.state == MOVING_TO_COLLECT){
+						if(players[i].hero.curr_path_index == players[i].hero.path.last_path_index-1){
+							if(m.terrain[next.y][next.x] >= '1' && m.terrain[next.y][next.x] <= '7'){
+								int index = (int)(m.terrain[next.y][next.x]-'1');
+								int curr_capacity = players[i].hero.bag.curr_capacity;
+								int req_space = players[i].hero.bag.items[index].required_space;
+								int bag_capacity = players[i].hero.bag.bag_capacity;
+								if(curr_capacity + req_space <= bag_capacity){
+									players[i].hero.bag.items[index].quantity++;
+									players[i].hero.bag.curr_capacity += req_space;
+									m.terrain[next.y][next.x] = '.';
+								}
+							}
+							players[i].hero.curr_path_index = -1;
+							players[i].hero.path.last_path_index = -1;
+							players[i].hero.dest_pos.x = -1;
+							players[i].hero.dest_pos.y = -1;
+							players[i].hero.state = STEADY;
+							players[i].hero.attack_mode = MELEE;
+						}
+					}
+					else{
+						if(!m.is_empty_location(next.x, next.y)){
+							point dest = players[i].hero.dest_pos;
+							players[i].hero.route(&m, dest);
+						}
+						if(players[i].hero.path.last_path_index != -1){
+							players[i].hero.curr_path_index++;
+							int index = players[i].hero.curr_path_index;
+							players[i].hero.curr_pos.x = (int)players[i].hero.path.path[index][0];
+							players[i].hero.curr_pos.y = (int)players[i].hero.path.path[index][1];
+						}
+					}
+				}
+				message[6].valid = false;
+			}
+		}
+		
 		usleep(30000);
 	}
 }
