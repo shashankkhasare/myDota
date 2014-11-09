@@ -36,8 +36,9 @@ public:
 	pthread_t tid; 
 
 
-	Client(char * server_address, int port ,  int mode);
+	Client(char * server_address, int port);
 	void start();
+	void startAI();
 
 };
 

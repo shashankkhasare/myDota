@@ -44,7 +44,7 @@ int getSocket(char *ip, int  port);
 player_data_t playerdata[4] = {0};
 player_data_t temple_a_data = {TEMPLE_A_ID, 2000, 0, -1, TEAM_A};
 player_data_t temple_b_data = {TEMPLE_B_ID, 2000, 0, -1, TEAM_B}; 
-
+magic_data_t magicdata;
 
 //Entity p0_e, p1_e, p2_e, p3_e; 
 
@@ -465,7 +465,7 @@ void send_hid_and_settle_team(int sock)
 }
 
 
-Client::Client(char * address, int port ,  int m){
+Client::Client(char * address, int port){
 	// setting vars 
 	//gamemode = m; 
 
@@ -588,12 +588,32 @@ void *  bcast_receiver(void *This){
 			}else {
 				if ( debugbcast) cout << "Unknown game state received \n";  
 			}	
+		}else if ( h.type == BCAST_MAGIC){
+			if ( debugbcast) cout << "debugbcast:: Ok sent waiting for the magic bcast data  \n";
+			recv(bcast_sock, &magicdata,sizeof(magicdata) , 0); 
+			reply.type = OK;
+			send(bcast_sock, &reply, sizeof(reply), 0); 
+
 		}
 		else {
 			if(debugbcast) cout << " Received unknown bcast message : " << h.type << endl; 
 		}
 
 	}
+}
+void Client::startAI(){
+
+	pthread_t tid; 
+	cmd_t cmd; 
+	header head; 
+	pthread_create(&tid, NULL , bcast_receiver, NULL);
+	SDL_Init(SDL_INIT_EVERYTHING);
+	while(1){
+		int x = rand() % 74;
+		sleep(3);
+		send_goto_x_y_command(x, x);
+	}
+
 }
 void Client::start(){
 
@@ -790,6 +810,8 @@ void Client::start(){
 	identify_enemies(&p0_e, &p1_e, &p2_e, &p3_e, &ta_e, &tb_e);
 	Widget target("images/target.bmp" , NULL, 0 , 0 , 20 , 20  ) ; 
 	Widget grab("images/grab.bmp" , NULL, 0 , 0 , 30 , 19  ) ; 
+	Widget magic("images/magic.bmp" , NULL, 0 , 0 , 30 , 30  ) ; 
+
 	if ( playerdata[pid].team == TEAM_A){
 		SDL_WM_SetCaption(TEAM_A_NAME, NULL);
 	}else{
@@ -854,6 +876,15 @@ void Client::start(){
 		}else {
 
 			SDL_ShowCursor(1);
+		}
+
+		for ( int i = 0; i < magicdata.no; i++)
+		{
+			int x,  y ; 
+			x = magicdata.x[i];
+			y = magicdata.y[i];
+			magic.setLocation(x, y);
+			SDL_BlitSurface(magic.getSurface(), NULL, screen, magic.getRectAddr());
 		}
 
 		while(SDL_PollEvent(&e)){
@@ -1048,13 +1079,12 @@ int main(int argc, char * argv[])
 
 	int gamemode = atoi(argv[2]);
 
+	Client c(address, 8181);
 	if ( gamemode == HUMAN){
-		Client c(address, 8181,  HUMAN);
 		c.start();
-
-
 	}else if ( gamemode == AI )
 	{
+		c.startAI();
 
 	}else
 	{
