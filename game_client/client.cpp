@@ -36,6 +36,10 @@
 #define M3_IMAGE "images/m3.bmp"
 #define M4_IMAGE "images/m4.bmp"
 
+#define WIN 10 
+#define LOSS 11
+#define INPROGRESS 12
+
 using namespace std; 
 int getSocket(char *ip, int  port);
 
@@ -46,6 +50,7 @@ player_data_t temple_a_data = {TEMPLE_A_ID, 2000, 0, -1, TEAM_A};
 player_data_t temple_b_data = {TEMPLE_B_ID, 2000, 0, -1, TEAM_B}; 
 magic_data_t magicdata;
 
+
 //Entity p0_e, p1_e, p2_e, p3_e; 
 
 
@@ -55,11 +60,12 @@ int bcast_sock;
 
 int pid;
 int gamemode ;
-int gamestate = STATE_BEFORE_START; 
+int gamestate =INPROGRESS;
 
 bool setMouseTarget = false; 
 bool setMouseGrab = false; 
 bool isMdown = false; 
+bool isShift = false;
 int mouse_x  =0 , mouse_y=0; 
 vector<Entity*> enemies;
 
@@ -78,6 +84,25 @@ void print_terrain()
 		cout << endl; 
 	}
 }
+
+void setGameState(){
+	int selfteam = playerdata[pid].team;
+	if(temple_a_data.health ==0 || temple_b_data.health ==0){
+		if ( temple_a_data.health == 0){
+			if ( temple_a_data.team == selfteam)
+				gamestate = LOSS;
+			else 
+				gamestate = WIN;
+		}else{
+			if ( temple_b_data.team = selfteam) 
+				gamestate = LOSS; 
+			else 
+				gamestate = WIN;
+		}
+	}
+}
+
+
 
 
 bool point_not_invisible(int x , int y ){
@@ -98,62 +123,6 @@ bool point_not_invisible(int x , int y ){
 
 	}
 }
-/*
-void create_map(){
-
-	for(int i = 0; i < 75; i ++) {
-		for ( int j = 0 ; j < 75 ; j++)
-		{
-			if ( '1' <= terrain[i][j]  && terrain[i][j] <= '7'){
-
-				switch(terrain[i][j]){
-					case '1':
-						itemmap[i][j] = new Widget("images/items/nike.bmp", NULL);
-						break;
-					case '2':
-						itemmap[i][j] = new	Widget("images/items/supernike.bmp", NULL);
-						break;
-					case '3':
-						itemmap[i][j] = new	Widget("images/items/hammer.bmp", NULL);
-						break;
-					case '4':
-						itemmap[i][j] = new	Widget("images/items/superhammer.bmp", NULL);
-						break;
-					case '5':
-						itemmap[i][j] = new	Widget("images/items/banana.bmp", NULL);
-						break;
-					case '6':
-						itemmap[i][j] = new	Widget("images/items/redhot.bmp", NULL);
-						break;
-					case '7':
-						itemmap[i][j] = new	Widget("images/items/toolbox.bmp", NULL);
-						break;
-					default : 
-						break;
-				}
-				cout << "Item found at " << i << " " << j << endl; 
-				itemmap[i][j] -> setLocation(10 * j , 10 * i ) ; 
-				itemmap[i][j] -> setDim(20, 20);
-			}
-		}
-	}
-}
-void update_itemmap(){
-
-	for ( int i =0 ;i < 75 ; i ++ ) 
-	{
-		if ( itemmap.find(i) != itemmap.end()){
-			for( int j = 0 ; j < 75 ; j++){
-				if(itemmap[i].find(j) != itemmap[i].end())
-				{
-					if ( !('1' <= terrain[i][j] && terrain[i][j] <= '7'))
-						delete itemmap[i][j];
-				}
-			}
-		}
-	}
-}
-*/
 void update_entities(Entity *p0_e, Entity *p1_e,Entity *p2_e,Entity *p3_e, Entity * ta_e, Entity * tb_e){
 
 	p0_e->setHealth(playerdata[0].health);
@@ -231,7 +200,7 @@ void send_useitem_x_command(int item )
 
 	cmd.command = CMD_USEITEM_X;
 	cmd.x = item; 
-	if ( debugcommand ) cout << "debugcommand :: sending the command to server CMD_USEITEM_X \n";
+	if ( debugcommand ) cout << "debugcommand :: sending the command to server CMD_USEITEM_X "<< item << endl;
 	send(ipc_sock, &cmd, sizeof(cmd), 0);
 	recv(ipc_sock, &head, sizeof(head), 0 ) ; 
 	if ( head.type == OK ) 
@@ -662,35 +631,11 @@ void Client::start(){
 		item[i].deleteWhite(screen);
 	}
 	
-	/*	
-		Entity p00_e(M1_IMAGE, 170 , 190 , 20, 20) ; 
-		Entity p01_e(M2_IMAGE, 170 , 190 , 20, 20) ; 
-		Entity p02_e(M3_IMAGE, 170 , 190 , 20, 20) ; 
-		Entity p03_e(M4_IMAGE, 170 , 190 , 20, 20) ; 
 
-		Entity p10_e(M1_IMAGE, 170 , 190 , 20, 20) ; 
-		Entity p11_e(M2_IMAGE, 170 , 190 , 20, 20) ; 
-		Entity p12_e(M3_IMAGE, 170 , 190 , 20, 20) ; 
-		Entity p13_e(M4_IMAGE, 170 , 190 , 20, 20) ; 
-
-		Entity p20_e(M1_IMAGE, 170 , 190 , 20, 20) ; 
-		Entity p21_e(M2_IMAGE, 170 , 190 , 20, 20) ; 
-		Entity p22_e(M3_IMAGE, 170 , 190 , 20, 20) ; 
-		Entity p23_e(M4_IMAGE, 170 , 190 , 20, 20) ; 
-
-		Entity p30_e(M1_IMAGE, 170 , 190 , 20, 20) ; 
-		Entity p31_e(M2_IMAGE, 170 , 190 , 20, 20) ; 
-		Entity p32_e(M3_IMAGE, 170 , 190 , 20, 20) ; 
-		Entity p33_e(M4_IMAGE, 170 , 190 , 20, 20) ; 
-		*/
-	//Entity p0_e, p1_e, p2_e, p3_e;
-
-	Entity p0_e(NULL, 170 , 190 , 20, 20) ; 
-	Entity p1_e(NULL, 170 , 190 , 20, 20) ; 
-	Entity p2_e(NULL, 170 , 190 , 20, 20) ; 
-	Entity p3_e(NULL, 170 , 190 , 20, 20) ; 
-	/*
-	   while(playerdata[0].team + playerdata[1].team + playerdata[2].team + playerdata[3].team < 2 ) usleep(50000);*/
+	Entity p0_e(NULL, 170 , 190 , 30, 30) ; 
+	Entity p1_e(NULL, 170 , 190 , 30, 30) ; 
+	Entity p2_e(NULL, 170 , 190 , 30, 30) ; 
+	Entity p3_e(NULL, 170 , 190 , 30, 30) ; 
 
 	SDL_Surface * loading ; 
 	loading = SDL_DisplayFormat(SDL_LoadBMP("images/loading.bmp"));
@@ -912,6 +857,7 @@ void Client::start(){
 						case SDLK_ESCAPE : 
 							running = 0 ; 
 							break; 
+							/*
 						case SDLK_1:
 							send_useitem_x_command(1);
 							break;
@@ -933,6 +879,33 @@ void Client::start(){
 						case SDLK_7:
 							send_useitem_x_command(7);
 							break;
+							*/
+						case SDLK_n:
+							if ( isShift)
+								send_useitem_x_command(2);
+							else
+								send_useitem_x_command(1);
+							break;
+						case SDLK_h:
+							if ( isShift)
+								send_useitem_x_command(4);
+							else
+								send_useitem_x_command(3);
+							break;
+						case SDLK_b:
+							send_useitem_x_command(5);
+							break;
+						case SDLK_r:
+							send_useitem_x_command(6);
+							break;
+						case SDLK_t:
+							send_useitem_x_command(7);
+							break;
+							
+						case SDLK_LSHIFT:
+						case SDLK_RSHIFT:
+							isShift = true;
+							break;
 						case SDLK_m:
 							isMdown = true;
 							cout << "M is down " << endl;
@@ -945,6 +918,8 @@ void Client::start(){
 					if ( e.key.keysym.sym == SDLK_m){
 						isMdown = false;
 						cout << "M is up " << endl;
+					}else if ( e.key.keysym.sym == SDLK_RSHIFT || e.key.keysym.sym == SDLK_LSHIFT){
+						isShift = false;
 					}
 					break;
 
@@ -1053,12 +1028,26 @@ void Client::start(){
 					break;
 			}
 		}
+		setGameState();
+		if ( gamestate != INPROGRESS ){
+			SDL_Surface * result; 
+			if ( gamestate == WIN )
+				result = SDL_DisplayFormat(SDL_LoadBMP("images/win.bmp"));
+			else
+				result  = SDL_DisplayFormat(SDL_LoadBMP("images/loss.bmp"));
+			SDL_BlitSurface(result, NULL, screen,NULL);
+			SDL_Flip(screen);
+			sleep(3);
+			break;
+
+		}
 		SDL_Flip(screen);
 
 		if(1000/30 > SDL_GetTicks()-start)
 			SDL_Delay(1000/30 - (SDL_GetTicks()-start));
 		//SDL_Delay(100);
 	}
+	SDL_Quit();
 
 }
 

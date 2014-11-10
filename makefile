@@ -35,6 +35,6 @@ clean:
 	rm  mydota gameserver client main.o 
 
 kill:
-	kill -9 `pidof gameserver`
-	kill -9 `pidof client`
-	kill -9 `pidof mydota`
+	kill -9 `pidof gameserver` &
+	kill -9 `pidof client` &
+	kill -9 `pidof mydota` &
