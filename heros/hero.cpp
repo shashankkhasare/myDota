@@ -175,13 +175,16 @@ void Hero::drive(){
 		if(attack_mode == MELEE && curr_path_index == path.last_path_index-1){
 			if(!isMeleeDisabled){
 				int z;
-				if(target_type == TARGET_TYPE_TEMPLE)
+				if(target_type == TARGET_TYPE_TEMPLE){
 					z = 0;
-				else
+					message[z].int1 = TEAM_B - teamid;
+				}	
+				else{
 					z = 1;
+					message[z].int1 = target_id;
+				}	
 				cout << "Melee Attack Successful\n";
 				message[z].valid = true;
-				message[z].int1 = target_id;
 				message[z].int2 = -(damage*attack_speed);
 			}
 		}
@@ -237,13 +240,7 @@ void Hero::spawn(Map *m){
 
 void Hero::route(Map *m, point dest, int option){
 	if(!m->is_empty_location(dest.x, dest.y) && option != 1){
-		curr_path_index = -1;
-		path.last_path_index = -1;
-		//dest_pos.x = -1;
-		//dest_pos.y = -1;
-		dest_pos = curr_pos;
-		state = STEADY;
-		attack_mode = MELEE;
+		go_to_steady_state();
 		return;
 	}
 	
@@ -257,14 +254,16 @@ void Hero::route(Map *m, point dest, int option){
 		curr_path_index = 0;
 	}	
 	else{
-		curr_path_index = -1;
-		path.last_path_index = -1;
-		//dest_pos.x = -1;
-		//dest_pos.y = -1;
-		dest_pos = curr_pos;
-		state = STEADY;
-		attack_mode = MELEE;
+		go_to_steady_state();
 	}
 	m->terrain[curr_pos.y][curr_pos.x] = symbol_on_map;
 	m->terrain[dest.y][dest.x] = temp;
+}
+
+void Hero::go_to_steady_state(){
+	curr_path_index = -1;
+	path.last_path_index = -1;
+	dest_pos = curr_pos;
+	state = STEADY;
+	attack_mode = MELEE;
 }
