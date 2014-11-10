@@ -405,6 +405,12 @@ int main(int argc, char *argv[]){
 			if(cmd.command != CMD_INVALID)
 				players[i].hero.inst.push(cmd);
 			
+			int we;
+			for(we = 0; we < 5; we++){
+				magicdata.x[5*i+we] = -1;
+				magicdata.y[5*i+we] = -1;
+			}	
+			
 			// Pre-op
 			// 1.1 Allocate the spell if required.
 			if(players[i].hero.state == MOVING_TO_ATTACK_TEMPLE || players[i].hero.state == MOVING_TO_ATTACK_HERO){
@@ -446,9 +452,12 @@ int main(int argc, char *argv[]){
 			int j;
 			for(j = 0; j<CAPACITY_PER_SPELL; j++){
 				if(players[i].hero.mpower.path[j].last_path_index != -1){
-					if ( debugengine) cout << "Upadate spell position and apply its effect to player or temple if applicable.\n";
-					if(players[i].hero.mpower.index[j] < players[i].hero.mpower.path[j].last_path_index-1)
+					if(players[i].hero.mpower.index[j] < players[i].hero.mpower.path[j].last_path_index-1){
 						players[i].hero.mpower.index[j]++;
+						int idx = players[i].hero.mpower.index[j];
+						magicdata.x[5*i+j] = (int)players[i].hero.mpower.path[j].path[idx][0];
+						magicdata.y[5*i+j] = (int)players[i].hero.mpower.path[j].path[idx][1];
+					}	
 					int index = players[i].hero.mpower.index[j];
 					int last_index = players[i].hero.mpower.path[j].last_path_index;
 					int x, y;
@@ -543,12 +552,20 @@ int main(int argc, char *argv[]){
 			// 1.3 Recover player from disability if any.
 			time_t curr;
 			time(&curr);
-			if(players[i].hero.mpower.is_Disabled == true && players[i].hero.mpower.magic_lock >= curr)
-				players[i].hero.mpower.is_Disabled == false;
-			if(players[i].hero.isMeleeDisabled == true && players[i].hero.melee_lock >= curr)
-				players[i].hero.isMeleeDisabled == false;
-			if(players[i].hero.isMovementDisabled == true && players[i].hero.movement_lock >= curr)
-				players[i].hero.isMovementDisabled == false;	
+			if(players[i].hero.mpower.is_Disabled == true){
+				if(players[i].hero.mpower.magic_lock <= curr)
+					players[i].hero.mpower.is_Disabled = false;
+			}
+			
+			if(players[i].hero.isMeleeDisabled == true){
+				if(players[i].hero.melee_lock <= curr)
+					players[i].hero.isMeleeDisabled = false;
+			}
+			
+			if(players[i].hero.isMovementDisabled == true){
+				if(players[i].hero.movement_lock <= curr)
+					players[i].hero.isMovementDisabled = false;	
+			}		
 			
 			// Brust
 			players[i].hero.drive();
@@ -609,6 +626,12 @@ int main(int argc, char *argv[]){
 			if(message[3].valid == true){
 				players[i].hero.dest_pos = players[players[i].hero.target_id].hero.curr_pos;
 				players[i].hero.route(&m, players[i].hero.dest_pos, 1);
+				int kl;
+				cout << "HERE!!!!!! " << i << "\n";
+				cout << players[i].hero.state << " "<<players[i].hero.attack_mode<<endl;
+				for(kl = 0; kl <= players[i].hero.path.last_path_index; kl++){
+					cout << (int)players[i].hero.path.path[kl][0]<< " "<<(int)players[i].hero.path.path[kl][1]<<endl;
+				}
 				message[3].valid = false;
 			}
 
@@ -720,6 +743,9 @@ int main(int argc, char *argv[]){
 							}
 						}
 					}
+				}
+				else{
+					cout << "Movement Disabled for "<<i<<"\n";
 				}
 				message[6].valid = false;
 			}
