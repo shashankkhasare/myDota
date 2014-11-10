@@ -813,6 +813,7 @@ void Client::start(){
 			SDL_ShowCursor(0);
 			target.setLocation(mouse_x -10, mouse_y -10);
 			target.deleteWhite(screen);
+			magic.deleteWhite(screen);
 			SDL_BlitSurface(target.getSurface(), NULL, screen, target.getRectAddr());
 
 		}else if (setMouseGrab) {
@@ -830,9 +831,10 @@ void Client::start(){
 			int x,  y ; 
 			x = magicdata.x[i];
 			y = magicdata.y[i];
+			cout << x << " " << y << "---------------------------------->" << endl;
 			if ( x < 0 || y < 0 ) 
 				continue;
-			magic.setLocation(x, y);
+			magic.setLocation(x * 10, y*10);
 			SDL_BlitSurface(magic.getSurface(), NULL, screen, magic.getRectAddr());
 		}
 
