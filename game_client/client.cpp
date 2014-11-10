@@ -21,7 +21,7 @@
 
 #define debug 		1
 #define debugcommand 	1
-#define debugbcast 		0
+#define debugbcast 	1
 
 #define MAGIC 2 
 #define MELEE 1
@@ -576,23 +576,17 @@ void Client::startAI(){
 
 	pthread_t tid; 
 	pthread_create(&tid, NULL , bcast_receiver, NULL);
-	sleep(10);
+	sleep(5);
 	while(1){
-		int selfteam = playerdata[tid].team; 
+		sleep(4);
+		int selfteam = playerdata[pid].team; 
+		
 		if( temple_a_data.team != selfteam){
 			isMdown = true;
-			send_attack_pid_command(TEMPLE_A_ID);
-			send_attack_pid_command(TEMPLE_A_ID);
-			send_attack_pid_command(TEMPLE_A_ID);
-			send_attack_pid_command(TEMPLE_A_ID);
 			send_attack_pid_command(TEMPLE_A_ID);
 			sleep(10);
 		}else{
 			isMdown = true;
-			send_attack_pid_command(TEMPLE_B_ID);
-			send_attack_pid_command(TEMPLE_B_ID);
-			send_attack_pid_command(TEMPLE_B_ID);
-			send_attack_pid_command(TEMPLE_B_ID);
 			send_attack_pid_command(TEMPLE_B_ID);
 			sleep(10);
 		}

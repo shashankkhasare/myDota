@@ -1,8 +1,8 @@
 all : client.o
-	g++ -w client.o -o ../client -lSDL -lpthread
+	g++ -w -g client.o -o ../client -lSDL -lpthread
    
 client.o : client.cpp   client.h ../Widget.h ../Entity.h
-	g++ -c -w client.cpp -lSDL -lpthread
+	g++ -c -w -g client.cpp -lSDL -lpthread
 
 clean : 
 	rm client.o 
