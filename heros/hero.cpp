@@ -83,7 +83,6 @@ Hero::Hero(int h_id, char symbol, point curr, int team){
 void Hero::process_dfa(){
 	cmd_t cmd ; 
 	if(inst.empty()){
-		if ( debugengine) cout << "No instruction. Returning from process DFA \n";
 		return;
 	}else{
 		cmd = inst.front();
@@ -107,6 +106,7 @@ void Hero::process_dfa(){
 		if(inst.front().attack_mode == MELEE && !isMeleeDisabled || inst.front().attack_mode == MAGIC && !mpower.is_Disabled){
 			attack_mode = inst.front().attack_mode;
 			target_id = inst.front().pid;
+			
 			if(target_id >= 0 && target_id <= 3 ){
 				target_type = TARGET_TYPE_HERO;
 				message[3].valid = true;
@@ -188,8 +188,7 @@ void Hero::drive(){
 				message[z].int2 = -(damage*attack_speed);
 			}
 		}
-		
-		if(attack_mode == MELEE && curr_path_index < path.last_path_index-1)
+		else
 			message[6].valid = true;
 	}
 	//if(debugengine) cout << "Calling process dfa ******************** \n";
