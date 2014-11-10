@@ -879,12 +879,14 @@ void Client::start(){
 
 			SDL_ShowCursor(1);
 		}
-
-		for ( int i = 0; i < magicdata.no; i++)
+	// magic spell 
+		for ( int i = 0; i < 20; i++)
 		{
 			int x,  y ; 
 			x = magicdata.x[i];
 			y = magicdata.y[i];
+			if ( x < 0 || y < 0 ) 
+				continue;
 			magic.setLocation(x, y);
 			SDL_BlitSurface(magic.getSurface(), NULL, screen, magic.getRectAddr());
 		}

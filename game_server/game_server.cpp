@@ -34,6 +34,7 @@ int available_pid=0;
 int max_players;
 int connections_served =0 ;
 Player players[4];
+magic_data_t magicdata;
 Map m("maps/m1");
 vector<int> team_a; 
 vector<int> team_b; 
@@ -355,6 +356,25 @@ void * bcast_sender(void *T){
 			}
 			else 
 				cout << "Unknown reply for temple data from client of player : " << i  << endl ; 
+
+			// send magic data
+
+			reply.type = BCAST_MAGIC; 
+			send(players[i].bcast_sock, &reply, sizeof(reply), NULL);
+			recv(players[i].bcast_sock, &h, sizeof(h), NULL);
+			if( h.type == OK){
+				if ( bcastdebug ) cout << "bcastdebug ::reply for bcast magic received ok. Now sending actual data \n"; 
+			}
+			else 
+				cout << "Unknown reply for bcast magic data from client   " << i  << endl ; 
+			send(players[i].bcast_sock, &magicdata, sizeof(magicdata) , NULL);
+			recv(players[i].bcast_sock, &h, sizeof(h), NULL);
+			if( h.type == OK){
+				if ( bcastdebug ) cout << "bcastdebug :: magic data sent received : ok \n"; 
+			}
+			else 
+				cout << "Unknown reply for magic data from client of player : " << i  << endl ; 
+
 
 		}
 	}

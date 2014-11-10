@@ -22,7 +22,6 @@ typedef struct magic_data_t {
 
 	int x[20];
 	int y[20];
-	int no; 
 }magic_data_t; 
 
 
