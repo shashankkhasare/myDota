@@ -575,14 +575,35 @@ void *  bcast_receiver(void *This){
 void Client::startAI(){
 
 	pthread_t tid; 
-	cmd_t cmd; 
-	header head; 
 	pthread_create(&tid, NULL , bcast_receiver, NULL);
-	SDL_Init(SDL_INIT_EVERYTHING);
+	sleep(10);
 	while(1){
-		int x = rand() % 74;
-		sleep(3);
-		send_goto_x_y_command(x, x);
+		int selfteam = playerdata[tid].team; 
+		if( temple_a_data.team != selfteam){
+			isMdown = true;
+			send_attack_pid_command(TEMPLE_A_ID);
+			send_attack_pid_command(TEMPLE_A_ID);
+			send_attack_pid_command(TEMPLE_A_ID);
+			send_attack_pid_command(TEMPLE_A_ID);
+			send_attack_pid_command(TEMPLE_A_ID);
+			sleep(10);
+		}else{
+			isMdown = true;
+			send_attack_pid_command(TEMPLE_B_ID);
+			send_attack_pid_command(TEMPLE_B_ID);
+			send_attack_pid_command(TEMPLE_B_ID);
+			send_attack_pid_command(TEMPLE_B_ID);
+			send_attack_pid_command(TEMPLE_B_ID);
+			sleep(10);
+		}
+
+		for ( int i = 0 ; i < 4 ; i++){
+			if(playerdata[i].team != selfteam){
+				isMdown = true;
+				send_attack_pid_command(i);
+				sleep(5);
+			}
+		}
 	}
 
 }
@@ -630,7 +651,7 @@ void Client::start(){
 		item[i].setDim(20, 20) ; 
 		item[i].deleteWhite(screen);
 	}
-	
+
 
 	Entity p0_e(NULL, 170 , 190 , 30, 30) ; 
 	Entity p1_e(NULL, 170 , 190 , 30, 30) ; 
@@ -782,8 +803,8 @@ void Client::start(){
 				if(terrain[i][j] >= '1' && terrain[i][j] <= '7'){
 					item[terrain[i][j] -'1'].setLocation(10 * j, 10 * i);
 					SDL_BlitSurface(item[terrain[i][j] - '1'].getSurface(),
-					NULL, screen,
-					item[terrain[i][j] - '1'].getRectAddr() );
+							NULL, screen,
+							item[terrain[i][j] - '1'].getRectAddr() );
 
 				}else if(terrain[i][j] == 'J'){ // Jungle 
 					tw.setLocation(10*j, 10*i);
@@ -824,7 +845,7 @@ void Client::start(){
 
 			SDL_ShowCursor(1);
 		}
-	// magic spell 
+		// magic spell 
 		for ( int i = 0; i < 20; i++)
 		{
 			int x,  y ; 
@@ -858,28 +879,28 @@ void Client::start(){
 							running = 0 ; 
 							break; 
 							/*
-						case SDLK_1:
-							send_useitem_x_command(1);
-							break;
-						case SDLK_2:
-							send_useitem_x_command(2);
-							break;
-						case SDLK_3:
-							send_useitem_x_command(3);
-							break;
-						case SDLK_4:
-							send_useitem_x_command(4);
-							break;
-						case SDLK_5:
-							send_useitem_x_command(5);
-							break;
-						case SDLK_6:
-							send_useitem_x_command(6);
-							break;
-						case SDLK_7:
-							send_useitem_x_command(7);
-							break;
-							*/
+							   case SDLK_1:
+							   send_useitem_x_command(1);
+							   break;
+							   case SDLK_2:
+							   send_useitem_x_command(2);
+							   break;
+							   case SDLK_3:
+							   send_useitem_x_command(3);
+							   break;
+							   case SDLK_4:
+							   send_useitem_x_command(4);
+							   break;
+							   case SDLK_5:
+							   send_useitem_x_command(5);
+							   break;
+							   case SDLK_6:
+							   send_useitem_x_command(6);
+							   break;
+							   case SDLK_7:
+							   send_useitem_x_command(7);
+							   break;
+							   */
 						case SDLK_n:
 							if ( isShift)
 								send_useitem_x_command(2);
@@ -901,7 +922,7 @@ void Client::start(){
 						case SDLK_t:
 							send_useitem_x_command(7);
 							break;
-							
+
 						case SDLK_LSHIFT:
 						case SDLK_RSHIFT:
 							isShift = true;
