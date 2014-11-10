@@ -80,5 +80,6 @@ class  Hero{
 	void process_dfa();
 	void spawn(Map *m);
 	void route(Map *m, point dest, int option);
+	void go_to_steady_state();
 };
 #endif
