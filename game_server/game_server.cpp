@@ -414,13 +414,7 @@ int main(int argc, char *argv[]){
 										break;
 									}	
 								players[i].hero.mpower.nitro--;	
-								players[i].hero.state = STEADY;
-								players[i].hero.curr_path_index = -1;
-								players[i].hero.path.last_path_index = -1;
-								//players[i].hero.dest_pos.x = -1;
-								//players[i].hero.dest_pos.y = -1;
-								players[i].hero.dest_pos = players[i].hero.curr_pos;	
-								players[i].hero.attack_mode = MELEE;
+								players[i].hero.go_to_steady_state();
 							}	
 							m.terrain[src.y][src.x] = players[i].hero.symbol_on_map;
 							m.terrain[dest.y][dest.x] = tmp;
@@ -518,8 +512,11 @@ int main(int argc, char *argv[]){
 							if(l -> health < 0)
 								l -> health = 0;
 						}
-					}
 						
+						//stop & allocate nitro
+						players[i].hero.mpower.path[j].last_path_index = -1;
+						players[i].hero.mpower.nitro++;
+					}
 				}
 			}
 			
@@ -539,7 +536,22 @@ int main(int argc, char *argv[]){
 			// Post-op: Process message.
 
 			//message0: update health of temple a/b by some given amt.		
-			//(if moving in attack mode , go to stedy)						
+			//(if moving in attack mode , go to stedy)
+			if(message[0].valid == true){
+				temple *p;
+				if(message[0].int1 == TEAM_A)
+					p = &(m.temple_a);
+				else
+					p = &(m.temple_b);
+				
+				p->health += message[0].int2;
+				if(p->health <= 0)
+					p->health = 0;
+				
+				players[i].hero.go_to_steady_state();
+						
+				message[0].valid = false;
+			}						
 
 			//*message1: update(decrease) health of other hid by given amt.
 			//(Take care of spawning if required) (if moving in attack mode , go to stedy)
@@ -550,19 +562,28 @@ int main(int argc, char *argv[]){
 				if(players[victim].hero.health <= 0){
 					players[victim].hero.spawn(&m);
 				}
-				players[i].hero.curr_path_index = -1;
-				players[i].hero.path.last_path_index = -1;
-				//players[i].hero.dest_pos.x = -1;
-				//players[i].hero.dest_pos.y = -1;
-				players[i].hero.dest_pos = players[i].hero.curr_pos;
-				players[i].hero.state = STEADY;
-				players[i].hero.attack_mode = MELEE;	
+				players[i].hero.go_to_steady_state();	
 				
 				message[1].valid = false;
 			}
 
 			//*message2: Set my dest_x, dest_y to nearest point,
 			//adjacent to opponent temple boundary.
+			if(message[2].valid == true){
+				point src = players[i].hero.curr_pos;
+				int templeid = players[i].hero.target_id;
+				points_list ans = m.sorted_temple_pts(templeid, src);
+				
+				int jk;
+				for(jk = 0; jk < ans.num_of_points; jk++){
+					players[i].hero.dest_pos = ans.points[jk]; 
+					players[i].hero.route(&m, players[i].hero.dest_pos, 1);
+					if(players[i].hero.path.last_path_index != -1)
+						break;
+				}
+				
+				message[2].valid = false;
+			}
 
 			//*message3: Set my dest_x, dest_y to current position of opponent hid.
 			if(message[3].valid == true){
@@ -578,13 +599,7 @@ int main(int argc, char *argv[]){
 				m.terrain[src.y][src.x] = '.';
 				path_t p = m.get_shortest_path(players[i].hero.curr_pos, players[i].hero.dest_pos);
 				if(p.last_path_index == -1){
-					players[i].hero.state = STEADY;
-					players[i].hero.attack_mode = MELEE;
-					players[i].hero.path.last_path_index = -1;
-					players[i].hero.curr_path_index = -1;
-					//players[i].hero.dest_pos.x = -1;
-					//players[i].hero.dest_pos.y = -1;
-					players[i].hero.dest_pos = players[i].hero.curr_pos;
+					players[i].hero.go_to_steady_state();
 				}
 				else{
 					
@@ -613,13 +628,7 @@ int main(int argc, char *argv[]){
 					players[i].hero.route(&m, players[i].hero.dest_pos, 1);
 				}
 				else{
-					players[i].hero.curr_path_index = -1;
-					players[i].hero.path.last_path_index = -1;
-					//players[i].hero.dest_pos.x = -1;
-					//players[i].hero.dest_pos.y = -1;
-					players[i].hero.dest_pos = players[i].hero.curr_pos;
-					players[i].hero.state = STEADY;
-					players[i].hero.attack_mode = MELEE;
+					players[i].hero.go_to_steady_state();
 				}				
 				
 				message[5].valid = false;
@@ -662,13 +671,7 @@ int main(int argc, char *argv[]){
 								m.terrain[next.y][next.x] = '.';
 							}
 						}
-						players[i].hero.curr_path_index = -1;
-						players[i].hero.path.last_path_index = -1;
-						//players[i].hero.dest_pos.x = -1;
-						//players[i].hero.dest_pos.y = -1;
-						players[i].hero.dest_pos = players[i].hero.curr_pos;
-						players[i].hero.state = STEADY;
-						players[i].hero.attack_mode = MELEE;
+						players[i].hero.go_to_steady_state();
 					}
 					else{
 						if(!m.is_empty_location(next.x, next.y)){
@@ -680,14 +683,7 @@ int main(int argc, char *argv[]){
 							int x, y, index;
 							index = players[i].hero.curr_path_index;
 							if(index == players[i].hero.path.last_path_index){
-								players[i].hero.curr_path_index = -1;
-								players[i].hero.path.last_path_index = -1;
-								//players[i].hero.dest_pos.x = -1;
-								//players[i].hero.dest_pos.y = -1;
-								players[i].hero.dest_pos = players[i].hero.curr_pos;
-								players[i].hero.state = STEADY;
-								players[i].hero.attack_mode = MELEE;
-
+								players[i].hero.go_to_steady_state();
 							}
 							else{
 								x = (int)(players[i].hero.path.path[index][0]);
