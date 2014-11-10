@@ -65,6 +65,7 @@ class Map{
 	char get_location_content(point t);
 	void modify_location_content(point t, char c);
 	void PrintMap();
+	points_list sorted_temple_pts(int templeid, point src);
 	
 	Map(char * filename );
 	~Map();

@@ -1,4 +1,5 @@
 #include "map.h"
+#include "../common/defines.h"
 
 bool operator<(const op_item& l, const op_item& r)  
 {  
@@ -366,4 +367,34 @@ bool Map::is_empty_location(int x, int y){
 		return true;
 	
 	return false;		
+}
+
+points_list Map::sorted_temple_pts(int templeid, point src){
+	temple *p;
+	points_list ans;
+	ans.num_of_points = -1;
+	
+	if(templeid == TEMPLE_A_ID)
+		p = &temple_a;
+	else if(templeid == TEMPLE_B_ID)
+		p = &temple_b;
+	else{
+		cout << "invalid Temple Id\n";
+		return ans;
+	}
+	
+	ans = p->boundary;
+	int i, j;
+	point key;
+	for(j=1; j < ans.num_of_points; j++){
+		key = ans.points[j];
+		i = j-1;
+		while( i>=0 && sqrt(pow(ans.points[i].x-src.x,2)+pow(ans.points[i].y-src.y,2)) >
+			sqrt(pow(key.x-src.x,2)+pow(key.y-src.y,2)) ){
+			ans.points[i+1] = ans.points[i];
+			i--;
+		}
+		ans.points[i+1] = key;
+	}
+	return ans;
 }
