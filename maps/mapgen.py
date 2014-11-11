@@ -138,6 +138,7 @@ print "COLS: ", cols, " "
 #Draw Fight Margin
 print "WAR_BORDER_OFFSET: ", rows/6, " "
 DrawMargin(Map, rows/6)
+DrawMargin(Map, rows/6 - 1)
 
 # Draw Territories
 Coord_list = DrawCircle(-1, 0, rows/8, UPPERQUAD, Map, 'A')
@@ -160,16 +161,16 @@ Fill(Map, rows/2+rows/6, cols/2+cols/6, 'b')
 print "B_TEAM_TEMPLE_CENTER: ", str(rows/2+rows/6), str(cols/2+cols/6), " "
 
 # Draw Jungle
-L, U = GenCoordList(rows*cols*0.025, Map)
+L, U = GenCoordList(rows*cols*0.015, Map)
 for j in [L,U]:
 	for i in j:
 		Map[i[1]][i[0]] = 'J'
 
 
 # Draw Collectible Items
-items = list(np.random.random_integers(1, 7, size=(1,rows*cols/50))[0])
+items = list(np.random.random_integers(3, 7, size=(1,rows*cols/50))[0])
 items = [str(i) for i in items]
-L, U = GenCoordList(rows*cols/100, Map)
+L, U = GenCoordList(rows*cols/150, Map)
 for j in [L,U]:
 	for i in range(len(j)):
 		Map[j[i][1]][j[i][0]] = items[i]
