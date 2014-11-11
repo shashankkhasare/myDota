@@ -216,7 +216,7 @@ void serve_connection(sockaddr_in client , int sock_fd)
 		}
 		
 		//Set Current position After Spawning.
-		h.spawn(&m);
+		h.spawn(&m, 0);
 		
 		// make the ipc socket nonblocking 
 		fd_set_blocking(sock_fd, 0 ) ; 
@@ -538,7 +538,7 @@ int main(int argc, char *argv[]){
 							
 							players[z].hero.health -= players[i].hero.mpower.damage;
 							if(players[z].hero.health <= 0){
-								players[z].hero.spawn(&m);
+								players[z].hero.spawn(&m, 1);
 							}	
 						}
 						else{
@@ -607,7 +607,7 @@ int main(int argc, char *argv[]){
 				int dec = message[1].int2;
 				players[victim].hero.health += dec;
 				if(players[victim].hero.health <= 0){
-					players[victim].hero.spawn(&m);
+					players[victim].hero.spawn(&m, 1);
 				}
 				players[i].hero.go_to_steady_state();	
 				
