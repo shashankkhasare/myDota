@@ -584,9 +584,15 @@ void Client::startAI(){
 		if( temple_a_data.team != selfteam){
 			isMdown = true;
 			send_attack_pid_command(TEMPLE_A_ID);
+			send_attack_pid_command(TEMPLE_A_ID);
+			send_attack_pid_command(TEMPLE_A_ID);
+			send_attack_pid_command(TEMPLE_A_ID);
 			sleep(10);
 		}else{
 			isMdown = true;
+			send_attack_pid_command(TEMPLE_B_ID);
+			send_attack_pid_command(TEMPLE_B_ID);
+			send_attack_pid_command(TEMPLE_B_ID);
 			send_attack_pid_command(TEMPLE_B_ID);
 			sleep(10);
 		}
@@ -594,6 +600,8 @@ void Client::startAI(){
 		for ( int i = 0 ; i < 4 ; i++){
 			if(playerdata[i].team != selfteam){
 				isMdown = true;
+				send_attack_pid_command(i);
+				send_attack_pid_command(i);
 				send_attack_pid_command(i);
 				sleep(5);
 			}

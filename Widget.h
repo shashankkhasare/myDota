@@ -1,5 +1,5 @@
 class Widget{
-
+	public:
 	SDL_Rect r; 
 	SDL_Surface * image, *image_hover = NULL;
 	bool mouseOver = false;

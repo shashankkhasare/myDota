@@ -383,6 +383,16 @@ void * bcast_sender(void *T){
 }
 int main(int argc, char *argv[]){
 
+	if(argc <2 ) 
+	{
+		cout << "Game speed exptected as argument \n";
+		exit(1);
+	}
+	int speed = atoi(argv[1]);
+	if ( speed > 3 || speed < 1 ) {
+		cout << "Invalid speed specified \n";
+		exit(1);
+	}
 	struct sockaddr_in addr  = getSelfAddress();
 	port =8181;
 	max_players=4;
@@ -751,6 +761,6 @@ int main(int argc, char *argv[]){
 			}
 		}
 		
-		usleep(300000);
+		usleep(speed * 100000);
 	}
 }
