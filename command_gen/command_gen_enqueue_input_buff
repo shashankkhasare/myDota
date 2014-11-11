@@ -1,6 +1,0 @@
-goto X Y
-attackhero h_id
-useitem	X
-setattackmode X
-additem X
-quit
