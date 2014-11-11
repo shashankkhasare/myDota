@@ -43,24 +43,24 @@ Map::Map(char *map_file){
 		else if(token == "TEAM_A_SPAWN_BORDER:"){
 			infile >> team_a_spawn_border.num_of_points;
 			for(i = 0; i<team_a_spawn_border.num_of_points; i++)
-				infile >> team_a_spawn_border.points[i].x >> team_a_spawn_border.points[i].y;
+				infile >> team_a_spawn_border.points[i].y >> team_a_spawn_border.points[i].x;
 			
 		}
 		else if(token == "TEAM_B_SPAWN_BORDER:"){
 			infile >> team_b_spawn_border.num_of_points;
 			for(i = 0; i<team_b_spawn_border.num_of_points; i++)
-				infile >> team_b_spawn_border.points[i].x >> team_b_spawn_border.points[i].y;
+				infile >> team_b_spawn_border.points[i].y >> team_b_spawn_border.points[i].x;
 			
 		}
 		else if(token == "TEAM_A_TEMPLE_BORDER:"){
 			infile >> temple_a.boundary.num_of_points;
 			for(i = 0; i<temple_a.boundary.num_of_points; i++)
-				infile >> temple_a.boundary.points[i].x >> temple_a.boundary.points[i].y;
+				infile >> temple_a.boundary.points[i].y >> temple_a.boundary.points[i].x;
 		}
 		else if(token == "TEAM_B_TEMPLE_BORDER:"){
 			infile >> temple_b.boundary.num_of_points;
 			for(i = 0; i<temple_b.boundary.num_of_points; i++)
-				infile >> temple_b.boundary.points[i].x >> temple_b.boundary.points[i].y;
+				infile >> temple_b.boundary.points[i].y >> temple_b.boundary.points[i].x;
 		}
 		else if(token == "A_TEAM_TEMPLE_CENTER:"){
 			infile >> temple_a.pos_x >> temple_a.pos_y;

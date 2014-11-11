@@ -142,11 +142,11 @@ DrawMargin(Map, rows/6 - 1)
 
 # Draw Territories
 Coord_list = DrawCircle(-1, 0, rows/8, UPPERQUAD, Map, 'A')
-print "TEAM_B_SPAWN_BORDER: ", len(Coord_list), print_Coord_list(Coord_list)
+print "TEAM_A_SPAWN_BORDER: ", len(Coord_list), print_Coord_list(Coord_list)
 Fill(Map, rows-1, 0, 'A')
 
 Coord_list = DrawCircle(0, 1, rows/8, LOWERQUAD, Map, 'B')
-print "TEAM_A_SPAWN_BORDER: ", len(Coord_list), print_Coord_list(Coord_list)
+print "TEAM_B_SPAWN_BORDER: ", len(Coord_list), print_Coord_list(Coord_list)
 Fill(Map, 0, cols-1, 'B')
 
 Coord_list = DrawCircle(cols/2-cols/6, rows/2+rows/6, int(rows*0.065), FULL, Map, 'a')
