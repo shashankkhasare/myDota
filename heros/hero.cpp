@@ -142,7 +142,7 @@ void Hero::process_dfa(){
 				message[0].int2 = bag.items[item_to_consume].temp_heal;
 			}
 				
-			bag.curr_capacity += bag.items[item_to_consume].required_space;
+			bag.curr_capacity -= bag.items[item_to_consume].required_space;
 			bag.items[item_to_consume].quantity -= 1;
 		}
 		inst.pop();
