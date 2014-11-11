@@ -772,7 +772,7 @@ void Client::start(){
 	identify_enemies(&p0_e, &p1_e, &p2_e, &p3_e, &ta_e, &tb_e);
 	Widget target("images/target.bmp" , NULL, 0 , 0 , 20 , 20  ) ; 
 	Widget grab("images/grab.bmp" , NULL, 0 , 0 , 30 , 19  ) ; 
-	Widget magic("images/magic.bmp" , NULL, 0 , 0 , 30 , 30  ) ; 
+	Widget magic("images/magic.bmp" , NULL, 0 , 0 , 15, 15 ) ; 
 
 	if ( playerdata[pid].team == TEAM_A){
 		SDL_WM_SetCaption(TEAM_A_NAME, NULL);
