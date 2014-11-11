@@ -196,7 +196,14 @@ void Hero::drive(){
 	//if(debugengine) cout << "Return from process dfa ******************** \n";
 }
 
-void Hero::spawn(Map *m){
+void Hero::spawn(Map *m, int option){
+	if(option == 1){
+		//Disable Movement for 5 sec.
+		isMovementDisabled = true;
+		time(&(movement_lock));
+		movement_lock += 15;
+	}
+	
 	if(curr_pos.x != -1 && curr_pos.y != -1){
 		m->terrain[curr_pos.y][curr_pos.x] = '.';
 	}
